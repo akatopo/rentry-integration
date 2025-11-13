@@ -14,7 +14,7 @@ export const rentryPropNames = [
 
 export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
   id: 'update-rentry',
-  name: 'Update rentry',
+  name: 'Update paste',
   checkCallback: (checking: boolean) =>
     editRentryCheckCallback(checking, plugin, (props) => {
       if (!props) {
@@ -38,7 +38,7 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
 
 export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
   id: 'delete-rentry',
-  name: 'Delete rentry',
+  name: 'Delete paste',
   checkCallback: (checking: boolean) =>
     editRentryCheckCallback(checking, plugin, (props) => {
       if (!props) {
@@ -64,7 +64,7 @@ export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
 
 export const createRentry = (plugin: RentryIntegrationPlugin) => ({
   id: 'create-rentry',
-  name: 'Create rentry',
+  name: 'Create paste',
   checkCallback: (checking: boolean) =>
     createRentryCheckCallback(checking, plugin, ({ file }) => {
       if (!file) {
