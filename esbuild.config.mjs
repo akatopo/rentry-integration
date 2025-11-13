@@ -15,7 +15,7 @@ const context = await esbuild.context({
 	banner: {
 		js: banner,
 	},
-	entryPoints: ["main.ts"],
+	entryPoints: ["main.tsx"],
 	bundle: true,
 	external: [
 		"obsidian",
@@ -33,6 +33,7 @@ const context = await esbuild.context({
 		"@lezer/lr",
 		...builtins],
 	format: "cjs",
+	// TODO probably want to bump this up
 	target: "es2018",
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
