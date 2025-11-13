@@ -255,7 +255,11 @@ async function getTextForRentry(
       : Promise.resolve(''),
     getNoteTextWithoutFrontmatter(file, app),
   ]).then(([frontmatterText, textWithoutFrontmatter]) => {
-    return [frontmatterText, textWithoutFrontmatter].join('\n');
+    return source`
+      ${frontmatterText}
+
+      ${textWithoutFrontmatter}
+    `;
   });
 }
 
