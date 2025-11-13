@@ -24,7 +24,6 @@
       "ES2021",
       "ES2022.Error",
       "ES2022.Object",
-      "ES2024"
     ]
   },
   "include": ["**/*.ts", "**/*.tsx"]

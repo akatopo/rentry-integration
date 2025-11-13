@@ -96,7 +96,7 @@ export const createRentry = (plugin: RentryIntegrationPlugin) => ({
 function editRentryCheckCallback(
   checking: boolean,
   plugin: Plugin,
-  fn: (props: ReturnType<typeof hasRentryFrontmatterProps>[1]) => undefined,
+  fn: (props: ReturnType<typeof hasRentryFrontmatterProps>[1]) => void,
 ) {
   const { app } = plugin;
   const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
@@ -117,7 +117,7 @@ function editRentryCheckCallback(
 function createRentryCheckCallback(
   checking: boolean,
   plugin: Plugin,
-  fn: ({ file }: { file?: TFile }) => undefined,
+  fn: ({ file }: { file?: TFile }) => void,
 ) {
   const { app } = plugin;
   const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
@@ -274,6 +274,8 @@ function removeRentryPropsFromFrontmatterObject(frontmatter: unknown) {
 }
 
 function getGraphemeCount(s: string) {
+  // need to update TS for compatibility with ES2024
+  // @ts-ignore
   const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
   return [...segmenter.segment(s)].length;
 }
