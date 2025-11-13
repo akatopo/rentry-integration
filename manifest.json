@@ -1,11 +1,11 @@
 {
-  "id": "rentry-integration",
-  "name": "Rentry integration",
-  "version": "1.0.0",
-  "minAppVersion": "0.15.0",
-  "description": "",
-  "author": "Alex Katopodis",
-  "authorUrl": "https://alex.katopod.is",
-  "fundingUrl": "",
-  "isDesktopOnly": false
+	"id": "rentry-integration",
+	"name": "Rentry integration",
+	"version": "1.0.1",
+	"minAppVersion": "0.15.0",
+	"description": "",
+	"author": "Alex Katopodis",
+	"authorUrl": "https://alex.katopod.is",
+	"fundingUrl": "",
+	"isDesktopOnly": false
 }
