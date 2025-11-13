@@ -3,6 +3,7 @@
     "baseUrl": ".",
     "inlineSourceMap": true,
     "inlineSources": true,
+    "allowSyntheticDefaultImports": true,
     "module": "ESNext",
     "target": "ES6",
     "allowJs": true,
@@ -10,15 +11,21 @@
     "moduleResolution": "node",
     "importHelpers": true,
     "isolatedModules": true,
+    "esModuleInterop": true,
     "strictNullChecks": true,
+    "jsx": "react",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
     "lib": [
       "DOM",
       "ES5",
       "ES6",
-      "ES7"
+      "ES7",
+      "ES2021",
+      "ES2022.Error",
+      "ES2022.Object",
+      "ES2024"
     ]
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts", "**/*.tsx"]
 }
