@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/release-it/schema/release-it.json",
+  "hooks": {
+    "after:bump": "npm run build && npm run version"
+  },
+  "github": {
+    "release": true,
+    "releaseName": "${version}",
+    "host": "github.com",
+    "assets": [
+      "main.js",
+      "manifest.json",
+      "styles.css"
+    ]
+  },
+  "npm": {
+    "publish": false
+  }
+}
