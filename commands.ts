@@ -100,10 +100,8 @@ function editRentryCheckCallback(
 ) {
   const { app } = plugin;
   const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
-  const [shouldDisplayCommand, props] = hasRentryFrontmatterProps(
-    markdownView,
-    app,
-  );
+  const [hasProps, props] = hasRentryFrontmatterProps(markdownView, app);
+  const shouldDisplayCommand = !!markdownView && hasProps;
 
   if (checking && shouldDisplayCommand) {
     return true;
@@ -122,11 +120,12 @@ function createRentryCheckCallback(
   const { app } = plugin;
   const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
   const [hasProps] = hasRentryFrontmatterProps(markdownView, app);
+  const shouldDisplayCommand = !!markdownView && !hasProps;
 
-  if (checking && !hasProps) {
+  if (checking && shouldDisplayCommand) {
     return true;
   }
-  if (hasProps) {
+  if (!shouldDisplayCommand) {
     return;
   }
   return fn({ file: markdownView?.file ?? undefined });
