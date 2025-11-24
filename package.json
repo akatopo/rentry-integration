@@ -27,7 +27,7 @@
 	"dependencies": {
 		"common-tags": "^1.8.2",
 		"cookie": "^0.6.0",
-		"form-data": "^4.0.0",
+		"ky": "^1.14.0",
 		"release-it": "^19.0.6",
 		"turndown": "^7.1.3"
 	}
