@@ -195,7 +195,9 @@ async function tryRenderFrontmatterText(file: TFile, app: App) {
     }
     if (Array.isArray(x)) {
       // https://rentry.co/how: Adding \n triggers a newline within cells and headers
-      return x.map((s) => escapeMd(String(s))).join(' \\n ');
+      return x
+        .map((s) => escapeMd(x.length > 1 ? `- ${s}` : String(s)))
+        .join(' \\n ');
     }
     return String(x);
   };
