@@ -1,8 +1,17 @@
-/*
+@keyframes rotate360 {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.status-bar-item.plugin-rentry-integration {
+  padding-block: 0;
+  background-color: var(--background-modifier-hover);
 
-If your plugin does not need CSS, delete this file.
-
-*/
+  .status-bar-item-icon > svg {
+    animation: rotate360 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  }
+}

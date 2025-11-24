@@ -24,6 +24,7 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
       const { rentryEditCode, rentryId, file } = props;
       const { app } = plugin;
 
+      const clearSpinner = plugin.renderStatusBarSpinner('Updating paste');
       getTextForRentry(file, app, plugin.settings.includeFrontmatter)
         .then((rentryText) => {
           return rentryApi.update({
@@ -32,7 +33,10 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
             text: rentryText,
           });
         })
-        .catch();
+        .catch()
+        .finally(() => {
+          clearSpinner();
+        });
     }),
 });
 
@@ -48,6 +52,7 @@ export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
       const { app } = plugin;
       const { rentryEditCode, rentryId, file } = props;
 
+      const clearSpinner = plugin.renderStatusBarSpinner('Deleting paste');
       rentryApi
         .remove({ id: rentryId, editCode: rentryEditCode })
         .then(async () => {
@@ -58,6 +63,9 @@ export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
           } catch (error) {
             // TODO ignored for now, an error message about frontmatter editing failing might be helpful
           }
+        })
+        .finally(() => {
+          clearSpinner();
         });
     }),
 });
@@ -71,8 +79,10 @@ export const createRentry = (plugin: RentryIntegrationPlugin) => ({
         return;
       }
       const { app } = plugin;
-      getTextForRentry(file, app, plugin.settings.includeFrontmatter).then(
-        (rentryText) =>
+
+      const clearSpinner = plugin.renderStatusBarSpinner('Creating paste');
+      getTextForRentry(file, app, plugin.settings.includeFrontmatter)
+        .then((rentryText) =>
           rentryApi
             .create({ text: rentryText })
             .then(async ({ id, url, editCode }) => {
@@ -89,7 +99,10 @@ export const createRentry = (plugin: RentryIntegrationPlugin) => ({
                 // TODO ignored for now, an error message about frontmatter editing failing might be helpful
               }
             }),
-      );
+        )
+        .finally(() => {
+          clearSpinner();
+        });
     }),
 });
 

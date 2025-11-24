@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, getIcon } from 'obsidian';
 
 import {
   updateRentry,
@@ -24,6 +24,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
 
 export default class RentryIntegrationPlugin extends Plugin {
   settings: PluginSettings;
+  statusBarItem: ReturnType<Plugin['addStatusBarItem']>;
 
   async onload() {
     await this.loadSettings();
@@ -34,6 +35,8 @@ export default class RentryIntegrationPlugin extends Plugin {
 
     // This adds a settings tab so the user can configure various aspects of the plugin
     this.addSettingTab(new SettingTab(this.app, this));
+
+    this.statusBarItem = this.addStatusBarItem();
   }
 
   onunload() {}
@@ -44,6 +47,24 @@ export default class RentryIntegrationPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  renderStatusBarSpinner(label: string) {
+    const { statusBarItem } = this;
+    const clear = () => {
+      statusBarItem.innerHTML = '';
+    };
+    clear();
+    statusBarItem.append(
+      <>
+        <span class="status-bar-item-icon status-bar-item-segment">
+          {getIcon('loader-circle')}
+        </span>
+        <span class="status-bar-item-segment">{label}</span>
+      </>,
+    );
+
+    return clear;
   }
 }
 
