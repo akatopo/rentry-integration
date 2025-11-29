@@ -67,7 +67,11 @@ export function Fragment(children: unknown) {
 }
 
 function createElementWithProps(type: string) {
-  const el = document.createElement(type) as HTMLElementWithProps;
+  const el = (
+    type.toLowerCase() === 'svg' || type.toLowerCase() === 'path'
+      ? document.createElementNS('http://www.w3.org/2000/svg', type)
+      : document.createElement(type)
+  ) as HTMLElementWithProps;
   el.props = {};
 
   return el;
