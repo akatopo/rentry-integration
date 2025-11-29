@@ -1,18 +1,10 @@
-@keyframes rotate360 {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .status-bar-item.plugin-rentry-integration {
   padding-block: 0;
   background-color: var(--background-modifier-hover);
 
+  /* obsidian has spin keyframes already defined */
   .status-bar-item-icon > svg {
-    animation: rotate360 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+    animation: spin 1s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
   }
 }
 
