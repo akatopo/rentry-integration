@@ -126,7 +126,6 @@ function tryNoticeError(plugin: RentryIntegrationPlugin, reason: unknown) {
   }
 
   const message = String((reason as Error)?.message);
-  // @ts-expect-error
   const cause = String((reason as Error)?.cause?.message) ?? '';
   plugin.noticeError(`${message}${cause ? `: ${cause}` : ''}`);
 }
