@@ -21,7 +21,7 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
         return;
       }
 
-      const { rentryEditCode, rentryId, file } = props;
+      const { rentryEditCode, rentryId, rentryUrl, file } = props;
       const { app } = plugin;
 
       const clearSpinner = plugin.renderStatusBarSpinner('Updating paste');
@@ -32,6 +32,9 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
             editCode: rentryEditCode,
             text: rentryText,
           });
+        })
+        .then(() => {
+          plugin.notice('Paste updated', rentryUrl);
         })
         .catch()
         .finally(() => {
@@ -64,6 +67,9 @@ export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
             // TODO ignored for now, an error message about frontmatter editing failing might be helpful
           }
         })
+        .then(() => {
+          plugin.notice('Paste deleted');
+        })
         .finally(() => {
           clearSpinner();
         });
@@ -95,11 +101,16 @@ export const createRentry = (plugin: RentryIntegrationPlugin) => ({
                     frontmatter.rentryEditCode = editCode;
                   },
                 );
+
+                return { id, url, editCode };
               } catch (error) {
                 // TODO ignored for now, an error message about frontmatter editing failing might be helpful
               }
             }),
         )
+        .then((res) => {
+          plugin.notice('Paste created', res?.url);
+        })
         .finally(() => {
           clearSpinner();
         });
@@ -158,7 +169,7 @@ function hasRentryFrontmatterProps(
   }
 
   const { frontmatter } = app.metadataCache.getFileCache(file) ?? {};
-  const { rentryId, rentryEditCode } = frontmatter ?? {};
+  const { rentryId, rentryEditCode, rentryUrl } = frontmatter ?? {};
 
   if (rentryId && rentryEditCode) {
     return [
@@ -166,6 +177,7 @@ function hasRentryFrontmatterProps(
       {
         rentryEditCode: String(rentryEditCode),
         rentryId: String(rentryId),
+        rentryUrl: String(rentryUrl),
         file,
       },
     ] as const;

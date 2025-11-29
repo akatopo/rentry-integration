@@ -1,4 +1,7 @@
-import { App, Plugin, PluginSettingTab, Setting, getIcon } from 'obsidian';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { h, Fragment } from './h.js';
+
+import { App, Plugin, PluginSettingTab, Setting, Notice } from 'obsidian';
 
 import {
   updateRentry,
@@ -6,9 +9,8 @@ import {
   createRentry,
   rentryPropNames,
 } from './commands.js';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { h, Fragment } from './h.js';
+import { CommandNotice } from './CommandNotice.js';
+import { StatusBarSpinner } from './StatusBarSpinner.js';
 
 // Remember to rename these classes and interfaces!
 
@@ -49,20 +51,17 @@ export default class RentryIntegrationPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
+  notice(message: string, rentryUrl?: string) {
+    new Notice(<CommandNotice {...{ message, rentryUrl }} />);
+  }
+
   renderStatusBarSpinner(label: string) {
     const { statusBarItem } = this;
     const clear = () => {
-      statusBarItem.innerHTML = '';
+      statusBarItem.empty();
     };
     clear();
-    statusBarItem.append(
-      <>
-        <span class="status-bar-item-icon status-bar-item-segment">
-          {getIcon('loader-circle')}
-        </span>
-        <span class="status-bar-item-segment">{label}</span>
-      </>,
-    );
+    statusBarItem.append(<StatusBarSpinner {...{ label }} />);
 
     return clear;
   }
