@@ -36,3 +36,9 @@
     font-weight: var(--font-bold);
   }
 }
+
+.notice:has(.plugin-rentry-integration.notice-message-content--error) {
+  border-left-color: var(--text-error);
+  border-left-width: var(--size-2-1);
+  border-left-style: solid;
+}
