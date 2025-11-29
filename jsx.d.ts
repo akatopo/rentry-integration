@@ -2,7 +2,7 @@ declare namespace JSX {
   type Element = DocumentFragment;
 
   interface Attributes {
-    [attrib: string]: string;
+    [attrib: string]: unknown;
   }
 
   interface IntrinsicElements {

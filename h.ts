@@ -25,6 +25,15 @@ export function h(
   Object.entries(props ?? {}).forEach(([name, value]) => {
     if (name.length > 1 && name[0] === '_') {
       el.props[name.slice(1)] = value;
+    }
+    if (name.length > 1 && name[0] === '$') {
+      if (typeof value !== 'function') {
+        console.error(`value for ${name} is not a function`, el);
+        return;
+      }
+      el.addEventListener(name.slice(1), (e) => {
+        return value(e);
+      });
     } else {
       el.setAttribute(name, String(value));
     }
