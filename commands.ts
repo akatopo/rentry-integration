@@ -1,6 +1,6 @@
 import { Plugin, MarkdownView, App, TFile } from 'obsidian';
 import { source } from 'common-tags';
-// @ts-ignore
+// @ts-expect-error
 import TurndownService from 'turndown';
 import * as rentryApi from './rentry.js';
 
@@ -311,7 +311,7 @@ function removeRentryPropsFromFrontmatterObject(frontmatter: unknown) {
   rentryPropNames.forEach((key) => {
     if (Object.hasOwn(frontmatter, key)) {
       // see https://github.com/microsoft/TypeScript/issues/44253
-      // @ts-ignore
+      // @ts-expect-error
       delete frontmatter[key];
     }
   });
@@ -319,7 +319,7 @@ function removeRentryPropsFromFrontmatterObject(frontmatter: unknown) {
 
 function getGraphemeCount(s: string) {
   // need to update TS for compatibility with ES2024
-  // @ts-ignore
+  // @ts-expect-error
   const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
   return [...segmenter.segment(s)].length;
 }
