@@ -36,7 +36,7 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
         .then(() => {
           plugin.notice('Paste updated', rentryUrl);
         })
-        .catch()
+        .catch((reason) => tryNoticeError(plugin, reason))
         .finally(() => {
           clearSpinner();
         });
@@ -70,6 +70,7 @@ export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
         .then(() => {
           plugin.notice('Paste deleted');
         })
+        .catch((reason) => tryNoticeError(plugin, reason))
         .finally(() => {
           clearSpinner();
         });
@@ -111,11 +112,24 @@ export const createRentry = (plugin: RentryIntegrationPlugin) => ({
         .then((res) => {
           plugin.notice('Paste created', res?.url);
         })
+        .catch((reason) => tryNoticeError(plugin, reason))
         .finally(() => {
           clearSpinner();
         });
     }),
 });
+
+function tryNoticeError(plugin: RentryIntegrationPlugin, reason: unknown) {
+  //  @ts-expect-error
+  if (!Error.isError(reason)) {
+    return;
+  }
+
+  const message = String((reason as Error)?.message);
+  // @ts-expect-error
+  const cause = String((reason as Error)?.cause?.message) ?? '';
+  plugin.noticeError(`${message}${cause ? `: ${cause}` : ''}`);
+}
 
 function editRentryCheckCallback(
   checking: boolean,

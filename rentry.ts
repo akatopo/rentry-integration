@@ -39,6 +39,7 @@ export async function create({
     },
     endpoint: 'api/new',
     signal,
+    commandVerb: 'create',
   });
 
   return {
@@ -63,6 +64,7 @@ export async function remove({
     },
     endpoint: `/api/delete/${id}`,
     signal,
+    commandVerb: 'remove',
   });
 }
 
@@ -84,6 +86,7 @@ export async function update({
     },
     endpoint: `api/edit/${id}`,
     signal,
+    commandVerb: 'update',
   });
 }
 
@@ -130,10 +133,12 @@ async function executeRequest<T extends Record<string, unknown>>({
   payload,
   endpoint,
   signal,
+  commandVerb,
 }: {
   payload: Record<string, string>;
   endpoint: string;
   signal?: AbortSignal;
+  commandVerb?: string;
 }) {
   const headers = {
     'Content-Type': 'application/x-www-form-urlencoded',
@@ -156,6 +161,13 @@ async function executeRequest<T extends Record<string, unknown>>({
     }
     return res as T;
   } catch (cause) {
-    throw new Error(`Failed to execute POST ${endpoint}`, { cause });
+    throw new Error(
+      `Failed to ${
+        commandVerb ? `${commandVerb} paste` : `execute POST ${endpoint}`
+      }`,
+      {
+        cause,
+      },
+    );
   }
 }

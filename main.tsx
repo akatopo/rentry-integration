@@ -55,6 +55,10 @@ export default class RentryIntegrationPlugin extends Plugin {
     new Notice(<CommandNotice {...{ message, rentryUrl }} />);
   }
 
+  noticeError(message: string) {
+    new Notice(<CommandNotice {...{ message, variant: 'error' }} />);
+  }
+
   renderStatusBarSpinner(label: string) {
     const { statusBarItem } = this;
     const clear = () => {
