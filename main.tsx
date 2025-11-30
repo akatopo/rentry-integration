@@ -11,6 +11,12 @@ import {
 } from './commands.js';
 import { CommandNotice } from './CommandNotice.js';
 import { StatusBarSpinner } from './StatusBarSpinner.js';
+import {
+  ConfirmationModal,
+  type ConfirmationModalRes,
+} from './ConfirmationModal.js';
+
+import type { ButtonsRenderFunc } from './ConfirmationModal.js';
 
 // Remember to rename these classes and interfaces!
 
@@ -57,6 +63,34 @@ export default class RentryIntegrationPlugin extends Plugin {
 
   noticeError(message: string) {
     new Notice(<CommandNotice {...{ message, variant: 'error' }} />);
+  }
+
+  confirmationModal({
+    title,
+    content,
+    buttons,
+  }: {
+    content: () => DocumentFragment;
+    buttons: ButtonsRenderFunc;
+    title: string;
+  }): Promise<ConfirmationModalRes | undefined> {
+    const { app } = this;
+    return new Promise((resolve, _reject) => {
+      let modalRes: ConfirmationModalRes | undefined;
+      const modal = new ConfirmationModal(app, {
+        title,
+        content,
+        buttons,
+        onSubmit: (res) => {
+          modalRes = res;
+          modal.close();
+        },
+      });
+      modal.setCloseCallback(() => {
+        resolve(modalRes);
+      });
+      modal.open();
+    });
   }
 
   renderStatusBarSpinner(label: string) {

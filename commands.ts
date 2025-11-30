@@ -3,6 +3,10 @@ import { source } from 'common-tags';
 // @ts-expect-error
 import TurndownService from 'turndown';
 import * as rentryApi from './rentry.js';
+import {
+  Buttons as DeleteModalButtons,
+  Content as DeleteModalContent,
+} from './DeletePasteModalSlots.js';
 
 import type RentryIntegrationPlugin from './main.js';
 
@@ -55,24 +59,39 @@ export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
       const { app } = plugin;
       const { rentryEditCode, rentryId, file } = props;
 
-      const clearSpinner = plugin.renderStatusBarSpinner('Deleting paste');
-      rentryApi
-        .remove({ id: rentryId, editCode: rentryEditCode })
-        .then(async () => {
-          try {
-            await app.fileManager.processFrontMatter(file, (frontmatter) => {
-              removeRentryPropsFromFrontmatterObject(frontmatter);
-            });
-          } catch (error) {
-            // TODO ignored for now, an error message about frontmatter editing failing might be helpful
+      plugin
+        .confirmationModal({
+          title: 'Delete paste',
+          content: () => DeleteModalContent({ filename: file.name }),
+          buttons: DeleteModalButtons,
+        })
+        .then((res) => {
+          if (res !== 'confirm') {
+            return;
           }
-        })
-        .then(() => {
-          plugin.notice('Paste deleted');
-        })
-        .catch((reason) => tryNoticeError(plugin, reason))
-        .finally(() => {
-          clearSpinner();
+
+          const clearSpinner = plugin.renderStatusBarSpinner('Deleting paste');
+          return rentryApi
+            .remove({ id: rentryId, editCode: rentryEditCode })
+            .then(async () => {
+              try {
+                await app.fileManager.processFrontMatter(
+                  file,
+                  (frontmatter) => {
+                    removeRentryPropsFromFrontmatterObject(frontmatter);
+                  },
+                );
+              } catch (error) {
+                // TODO ignored for now, an error message about frontmatter editing failing might be helpful
+              }
+            })
+            .then(() => {
+              plugin.notice('Paste deleted');
+            })
+            .catch((reason) => tryNoticeError(plugin, reason))
+            .finally(() => {
+              clearSpinner();
+            });
         });
     }),
 });
@@ -126,6 +145,7 @@ function tryNoticeError(plugin: RentryIntegrationPlugin, reason: unknown) {
   }
 
   const message = String((reason as Error)?.message);
+  // @ts-ignore
   const cause = String((reason as Error)?.cause?.message) ?? '';
   plugin.noticeError(`${message}${cause ? `: ${cause}` : ''}`);
 }
