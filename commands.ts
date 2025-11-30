@@ -1,6 +1,5 @@
 import { Plugin, MarkdownView, App, TFile } from 'obsidian';
 import { source } from 'common-tags';
-// @ts-expect-error
 import TurndownService from 'turndown';
 import * as rentryApi from './rentry.js';
 import {
@@ -149,14 +148,14 @@ export const createRentry = (plugin: RentryIntegrationPlugin) => ({
 });
 
 function tryNoticeError(plugin: RentryIntegrationPlugin, reason: unknown) {
-  //  @ts-expect-error
   if (!Error.isError(reason)) {
     return;
   }
 
-  const message = String((reason as Error)?.message);
-  // @ts-ignore
-  const cause = String((reason as Error)?.cause?.message) ?? '';
+  const message = String(reason?.message);
+  const cause = Error.isError(reason?.cause)
+    ? String(reason.cause.message)
+    : '';
   plugin.noticeError(`${message}${cause ? `: ${cause}` : ''}`);
 }
 
@@ -244,7 +243,7 @@ async function tryRenderFrontmatterText(
   app: App,
   skipEmptyFrontmatterValues: boolean,
 ) {
-  const { escape: escapeMd } = TurndownService();
+  const { escape: escapeMd } = new TurndownService();
   const { fileManager } = app;
   let frontmatterCopy = {};
   try {
@@ -373,8 +372,6 @@ function removeEmptyPropsFromFrontmatterObject(frontmatter: unknown) {
 }
 
 function getGraphemeCount(s: string) {
-  // need to update TS for compatibility with ES2024
-  // @ts-expect-error
   const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
   return [...segmenter.segment(s)].length;
 }

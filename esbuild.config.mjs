@@ -33,8 +33,7 @@ const context = await esbuild.context({
 		"@lezer/lr",
 		...builtins],
 	format: "cjs",
-	// TODO probably want to bump this up
-	target: "es2018",
+	target: "chrome138",
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
