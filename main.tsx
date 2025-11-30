@@ -20,18 +20,18 @@ import type { ButtonsRenderFunc } from './ConfirmationModal.js';
 
 // Remember to rename these classes and interfaces!
 
-interface PluginSettings {
-  mySetting: string;
+interface RentryIntegrationPluginSettings {
   includeFrontmatter: boolean;
+  skipEmptyFrontmatterValues: boolean;
 }
 
-const DEFAULT_SETTINGS: PluginSettings = {
-  mySetting: 'default',
+const DEFAULT_SETTINGS: RentryIntegrationPluginSettings = {
   includeFrontmatter: false,
+  skipEmptyFrontmatterValues: true,
 };
 
 export default class RentryIntegrationPlugin extends Plugin {
-  settings: PluginSettings;
+  settings: RentryIntegrationPluginSettings;
   statusBarItem: ReturnType<Plugin['addStatusBarItem']>;
 
   async onload() {
@@ -118,12 +118,14 @@ class SettingTab extends PluginSettingTab {
     const { settings } = plugin;
 
     containerEl.empty();
+    containerEl.addClass('plugin-rentry-integration');
 
     const [head, ...rest] = rentryPropNames;
     const desc = (
       <>
-        Include frontmatter as a markdown table in rentry pastes. Will{' '}
-        <strong>not</strong> include{' '}
+        Include frontmatter as a markdown table in rentry pastes.
+        <br />
+        Will <strong>not</strong> include{' '}
         {rest.map((r) => (
           <>
             <code>{r}</code>
@@ -134,14 +136,32 @@ class SettingTab extends PluginSettingTab {
       </>
     );
 
+    let skipEmptyFrontmatterSetting: Setting | undefined = undefined;
     new Setting(containerEl)
       .setName('Include frontmatter')
       .setDesc(desc)
       .addToggle((toggle) => {
         toggle.setValue(settings.includeFrontmatter).onChange(async (value) => {
           settings.includeFrontmatter = value;
+          skipEmptyFrontmatterSetting?.setDisabled(!value);
+
           await plugin.saveSettings();
         });
       });
+
+    skipEmptyFrontmatterSetting = new Setting(containerEl)
+      .setName('Skip empty frontmatter values')
+      .setDesc(
+        'Do not include frontmatter values that are empty in the rentry paste.',
+      )
+      .addToggle((toggle) => {
+        toggle
+          .setValue(settings.skipEmptyFrontmatterValues)
+          .onChange(async (value) => {
+            settings.skipEmptyFrontmatterValues = value;
+            await plugin.saveSettings();
+          });
+      })
+      .setDisabled(!settings.includeFrontmatter);
   }
 }

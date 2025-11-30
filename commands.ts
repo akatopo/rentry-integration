@@ -29,7 +29,12 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
       const { app } = plugin;
 
       const clearSpinner = plugin.renderStatusBarSpinner('Updating paste');
-      getTextForRentry(file, app, plugin.settings.includeFrontmatter)
+      getTextForRentry(
+        file,
+        app,
+        plugin.settings.includeFrontmatter,
+        plugin.settings.skipEmptyFrontmatterValues,
+      )
         .then((rentryText) => {
           return rentryApi.update({
             id: rentryId,
@@ -107,7 +112,12 @@ export const createRentry = (plugin: RentryIntegrationPlugin) => ({
       const { app } = plugin;
 
       const clearSpinner = plugin.renderStatusBarSpinner('Creating paste');
-      getTextForRentry(file, app, plugin.settings.includeFrontmatter)
+      getTextForRentry(
+        file,
+        app,
+        plugin.settings.includeFrontmatter,
+        plugin.settings.skipEmptyFrontmatterValues,
+      )
         .then((rentryText) =>
           rentryApi
             .create({ text: rentryText })
@@ -229,7 +239,11 @@ async function getNoteTextWithoutFrontmatter(file: TFile, app: App) {
   return textWithoutFrontmatter;
 }
 
-async function tryRenderFrontmatterText(file: TFile, app: App) {
+async function tryRenderFrontmatterText(
+  file: TFile,
+  app: App,
+  skipEmptyFrontmatterValues: boolean,
+) {
   const { escape: escapeMd } = TurndownService();
   const { fileManager } = app;
   let frontmatterCopy = {};
@@ -237,6 +251,9 @@ async function tryRenderFrontmatterText(file: TFile, app: App) {
     await fileManager.processFrontMatter(file, (frontmatter) => {
       const deepCopy = JSON.parse(JSON.stringify(frontmatter));
       removeRentryPropsFromFrontmatterObject(deepCopy);
+      if (skipEmptyFrontmatterValues) {
+        removeEmptyPropsFromFrontmatterObject(deepCopy);
+      }
       frontmatterCopy = deepCopy;
     });
   } catch (error) {
@@ -307,10 +324,11 @@ async function getTextForRentry(
   file: TFile,
   app: App,
   includeFrontmatter: boolean,
+  skipEmptyFrontmatterValues: boolean,
 ) {
   return Promise.all([
     includeFrontmatter
-      ? tryRenderFrontmatterText(file, app)
+      ? tryRenderFrontmatterText(file, app, skipEmptyFrontmatterValues)
       : Promise.resolve(''),
     getNoteTextWithoutFrontmatter(file, app),
   ]).then(([frontmatterText, textWithoutFrontmatter]) => {
@@ -330,6 +348,24 @@ function removeRentryPropsFromFrontmatterObject(frontmatter: unknown) {
   rentryPropNames.forEach((key) => {
     if (Object.hasOwn(frontmatter, key)) {
       // see https://github.com/microsoft/TypeScript/issues/44253
+      // @ts-expect-error
+      delete frontmatter[key];
+    }
+  });
+}
+
+function removeEmptyPropsFromFrontmatterObject(frontmatter: unknown) {
+  if (!frontmatter || typeof frontmatter !== 'object') {
+    return;
+  }
+
+  Object.entries(frontmatter).forEach(([key, value]) => {
+    if (
+      value === null ||
+      value === '' ||
+      value === undefined ||
+      (Array.isArray(value) && value.length === 0)
+    ) {
       // @ts-expect-error
       delete frontmatter[key];
     }

@@ -1,3 +1,5 @@
+/* Status bar */
+
 .status-bar-item.plugin-rentry-integration {
   padding-block: 0;
   background-color: var(--background-modifier-hover);
@@ -7,6 +9,8 @@
     animation: spin 1s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
   }
 }
+
+/* Notices */
 
 .notice:has(.plugin-rentry-integration) {
   padding: var(--size-4-4);
@@ -33,4 +37,17 @@
   border-left-color: var(--text-error);
   border-left-width: var(--size-2-1);
   border-left-style: solid;
+}
+
+/* Settings */
+
+.plugin-rentry-integration {
+  .setting-item.is-disabled :is(.setting-item-description, .setting-item-name) {
+    color: var(--text-faint);
+  }
+
+  .checkbox-container.is-disabled {
+    opacity: 0.2;
+    pointer-events: none;
+  }
 }
