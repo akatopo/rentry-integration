@@ -31,6 +31,10 @@
   .notice-message-title {
     font-weight: var(--font-bold);
   }
+
+  button.mod-success {
+    color: var(--text-success);
+  }
 }
 
 .notice:has(.plugin-rentry-integration.notice-message-content--error) {
