@@ -1,12 +1,14 @@
-type HTMLElementWithProps = HTMLElement & {
+export type HTMLElementWithProps = HTMLElement & {
   props: Record<string, unknown>;
 };
+
+export type Ref = { current?: HTMLElement };
 
 export function h(
   type:
     | typeof Fragment
     | ((
-        props: Record<string, unknown> | undefined,
+        props: Record<string, unknown> | undefined | null,
         children: [unknown],
       ) => DocumentFragment)
     | string,
@@ -17,16 +19,18 @@ export function h(
     return (type as typeof Fragment)(children);
   }
   if (typeof type === 'function') {
-    return type(props, children);
+    return type(props ?? {}, children);
   }
 
   const el = createElementWithProps(type);
 
   Object.entries(props ?? {}).forEach(([name, value]) => {
-    if (name.length > 1 && name[0] === '_') {
+    if (name === 'ref' && typeof value === 'object' && value !== null) {
+      const ref = value;
+      (ref as Ref).current = el;
+    } else if (name.length > 1 && name[0] === '_') {
       el.props[name.slice(1)] = value;
-    }
-    if (name.length > 1 && name[0] === '$') {
+    } else if (name.length > 1 && name[0] === '$') {
       if (typeof value !== 'function') {
         console.error(`value for ${name} is not a function`, el);
         return;
