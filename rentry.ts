@@ -3,6 +3,7 @@
 import { requestUrl } from 'obsidian';
 import ky from 'ky';
 import { parse as parseCookie } from 'cookie';
+import { ucs2decode } from './ucs2decode.js';
 
 type CreateRes = {
   status: string;
@@ -22,6 +23,22 @@ type OkRes = { status: '200'; content: 'OK' };
 
 const baseUrl = 'https://rentry.co';
 
+// https://rentry.co/what: 200000 character limit for text field.
+
+function checkTextCharacterLimit(s: string, commandVerb: string) {
+  const textCharacterLimit = 200_000;
+  const { length } = ucs2decode(s);
+  const numFmt = new Intl.NumberFormat().format;
+
+  if (length > textCharacterLimit) {
+    throw new Error(
+      `Unable to ${commandVerb} paste. Text length exceeds current limit of ${numFmt(
+        textCharacterLimit,
+      )} characters (${numFmt(length)} characters).`,
+    );
+  }
+}
+
 export async function create({
   id,
   text,
@@ -31,6 +48,10 @@ export async function create({
   text: string;
   signal?: AbortSignal;
 }) {
+  const commandVerb = 'create';
+
+  checkTextCharacterLimit(text, commandVerb);
+
   const res = await executeRequest<CreateRes>({
     payload: {
       text,
@@ -39,7 +60,7 @@ export async function create({
     },
     endpoint: 'api/new',
     signal,
-    commandVerb: 'create',
+    commandVerb,
   });
 
   return {
@@ -79,6 +100,10 @@ export async function update({
   text: string;
   signal?: AbortSignal;
 }) {
+  const commandVerb = 'update';
+
+  checkTextCharacterLimit(text, commandVerb);
+
   await executeRequest<OkRes>({
     payload: {
       text,
@@ -86,7 +111,7 @@ export async function update({
     },
     endpoint: `api/edit/${id}`,
     signal,
-    commandVerb: 'update',
+    commandVerb,
   });
 }
 
