@@ -1,6 +1,6 @@
 {
 	"name": "rentry-integration",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "Rentry (https://rentry.co) integration plugin for Obsidian (https://obsidian.md)",
 	"main": "main.js",
 	"scripts": {
