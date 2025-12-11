@@ -3,7 +3,7 @@
 import { requestUrl } from 'obsidian';
 import ky from 'ky';
 import { parse as parseCookie } from 'cookie';
-import { ucs2decode } from './ucs2decode.js';
+import { utf8CharacterCount } from './utf8CharacterCount.js';
 
 type CreateRes = {
   status: string;
@@ -27,7 +27,7 @@ const baseUrl = 'https://rentry.co';
 
 function checkTextCharacterLimit(s: string, commandVerb: string) {
   const textCharacterLimit = 200_000;
-  const { length } = ucs2decode(s);
+  const length = utf8CharacterCount(s);
   const numFmt = new Intl.NumberFormat().format;
 
   if (length > textCharacterLimit) {
