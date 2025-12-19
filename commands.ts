@@ -279,6 +279,10 @@ async function tryRenderFrontmatterText(
     ([property, value]) => [escapeMd(property), toEscapedString(value)],
   );
 
+  if (frontmatterEntries.length === 0) {
+    return '';
+  }
+
   const maxColLength = [
     ...frontmatterEntries,
     [propColLabel, valueColLabel],
@@ -325,18 +329,18 @@ async function getTextForRentry(
   includeFrontmatter: boolean,
   skipEmptyFrontmatterValues: boolean,
 ) {
-  return Promise.all([
+  const [frontmatterText, textWithoutFrontmatter] = await Promise.all([
     includeFrontmatter
       ? tryRenderFrontmatterText(file, app, skipEmptyFrontmatterValues)
       : Promise.resolve(''),
     getNoteTextWithoutFrontmatter(file, app),
-  ]).then(([frontmatterText, textWithoutFrontmatter]) => {
-    return source`
-      ${frontmatterText}
+  ]);
 
-      ${textWithoutFrontmatter}
-    `;
-  });
+  return source`
+    ${frontmatterText}
+
+    ${textWithoutFrontmatter}
+  `;
 }
 
 function removeRentryPropsFromFrontmatterObject(frontmatter: unknown) {
