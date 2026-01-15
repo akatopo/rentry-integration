@@ -3,12 +3,8 @@ import { h, Fragment } from './h.js';
 
 import { App, Plugin, PluginSettingTab, Setting, Notice } from 'obsidian';
 
-import {
-  updateRentry,
-  deleteRentry,
-  createRentry,
-  rentryPropNames,
-} from './commands.js';
+import { updateRentry, deleteRentry, createRentry } from './commands.js';
+import { rentryPropNames } from './frontmatter-props.js';
 import { CommandNotice } from './CommandNotice.js';
 import { StatusBarSpinner } from './StatusBarSpinner.js';
 import {
@@ -17,8 +13,6 @@ import {
 } from './ConfirmationModal.js';
 
 import type { ButtonsRenderFunc } from './ConfirmationModal.js';
-
-// Remember to rename these classes and interfaces!
 
 interface RentryIntegrationPluginSettings {
   includeFrontmatter: boolean;
