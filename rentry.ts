@@ -4,6 +4,7 @@ import { requestUrl } from 'obsidian';
 import ky from 'ky';
 import { parse as parseCookie } from 'cookie';
 import { utf8CharacterCount } from './utf8CharacterCount.js';
+import { abortablePromise } from './util.js';
 
 type CreateRes = {
   status: string;
@@ -112,27 +113,6 @@ export async function update({
     endpoint: `api/edit/${id}`,
     signal,
     commandVerb,
-  });
-}
-
-function abortablePromise<T>(
-  p: Promise<T>,
-  { signal }: { signal?: AbortSignal },
-) {
-  return new Promise<T>((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(signal.reason);
-    }
-
-    signal?.addEventListener('abort', () => {
-      reject(signal.reason);
-    });
-
-    try {
-      p.then((res) => resolve(res)).catch((reason) => reject(reason));
-    } catch (error) {
-      reject(error);
-    }
   });
 }
 
