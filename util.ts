@@ -4,22 +4,21 @@ export function isRecord(o: unknown): o is Record<string, unknown> {
   return Object.prototype.toString.call(o).endsWith('Object]');
 }
 
-export async function tryGetFrontmatterCopy(
+export function tryGetFrontmatterCopy(
   file: TFile,
   app: App,
 ): Promise<Record<string, unknown>> {
-  const { fileManager } = app;
+  // const { fileManager } = app;
   let frontmatterCopy = {};
-  try {
-    await fileManager.processFrontMatter(file, (frontmatter) => {
-      const deepCopy = JSON.parse(JSON.stringify(frontmatter));
+  return tryProcessFrontmatter(
+    (fm) => {
+      const deepCopy = JSON.parse(JSON.stringify(fm));
 
       frontmatterCopy = deepCopy;
-    });
-  } catch (error) {
-    // TODO ignored for now, an error message about frontmatter editing failing might be helpful
-  }
-  return frontmatterCopy;
+    },
+    file,
+    app,
+  ).then(() => frontmatterCopy);
 }
 
 export function tryProcessFrontmatter(
