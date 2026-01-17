@@ -35,7 +35,7 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
   id: 'update-rentry',
   name: 'Update paste',
   checkCallback: (checking: boolean) =>
-    editRentryCheckCallback(checking, plugin, async (props) => {
+    editRentryCheckCallback(checking, plugin, (props) => {
       if (!props) {
         return;
       }
@@ -207,7 +207,7 @@ export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
 
           const pasteRemoved = rentryApi
             .remove({ id: rentryId, editCode: rentryEditCode })
-            .then(async () => {
+            .then(() => {
               // embedCache prop should be removed independent of rentry props
               return tryProcessFrontmatter(
                 (fm) => {
