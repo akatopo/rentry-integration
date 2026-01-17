@@ -1,21 +1,38 @@
 import TurndownService from 'turndown';
 import { source } from 'common-tags';
 import { getGraphemeCount, isRecord, getFrontmatterEndOffset } from './util.js';
-import { rentryPropNames } from './frontmatter-props.js';
+import { rentryPropNames, rentryEmbedCache } from './frontmatter-props.js';
 
 import type { TFile, App } from 'obsidian';
-import type { EmbedData, ResolvedEmbed } from './embeds.js';
+import type { RentryEmbedCache, ResolvedEmbed } from './embeds.js';
 
-export function removeRentryPropsFromFrontmatterObject(frontmatter: unknown) {
+export function removeRentryPropsFromFrontmatterObject(
+  frontmatter: unknown,
+  keepEmbedCache = false,
+) {
   if (!isRecord(frontmatter)) {
     return;
   }
 
   rentryPropNames.forEach((key) => {
+    if (keepEmbedCache && key === rentryEmbedCache) {
+      return;
+    }
+
     if (Object.hasOwn(frontmatter, key)) {
       delete frontmatter[key];
     }
   });
+}
+
+export function removeEmbedCacheFromFrontmatterObject(frontmatter: unknown) {
+  if (!isRecord(frontmatter)) {
+    return;
+  }
+
+  if (Object.hasOwn(frontmatter, rentryEmbedCache)) {
+    delete frontmatter[rentryEmbedCache];
+  }
 }
 
 export function removeEmptyPropsFromFrontmatterObject(frontmatter: unknown) {
@@ -107,7 +124,7 @@ export function tryRenderFrontmatterText(frontmatter: unknown) {
 
 export async function replaceResolvedEmbeds(
   resolvedEmbeds: ResolvedEmbed[],
-  embedData: EmbedData,
+  embedData: RentryEmbedCache,
   text: string,
 ) {
   const { pathMap } = embedData;
