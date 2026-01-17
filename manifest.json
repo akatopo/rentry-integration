@@ -1,7 +1,7 @@
 {
 	"id": "rentry-integration",
 	"name": "Rentry integration",
-	"version": "1.0.3",
+	"version": "1.1.0",
 	"minAppVersion": "1.11.0",
 	"description": "",
 	"author": "Alex Katopodis",
