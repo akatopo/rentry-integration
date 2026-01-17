@@ -2,6 +2,7 @@
 
 import { requestUrl } from 'obsidian';
 import ky from 'ky';
+// @ts-expect-error
 import toHex from 'es-arraybuffer-base64/Uint8Array.prototype.toHex';
 import {
   object,
@@ -26,6 +27,12 @@ const deleteByAssetIdResponseSchema = object({
     }),
   ),
   partial: boolean(),
+});
+
+const uploadResponseSchema = object({
+  asset_id: string(),
+  resource_type: string(),
+  secure_url: string(),
 });
 
 // https://cloudinary.com/documentation/upload_images#basic_uploading
@@ -78,8 +85,12 @@ export async function upload({
     commandVerb,
   });
 
-  // TODO validate response
-  return res;
+  try {
+    const parsed = uploadResponseSchema.parse(res);
+    return parsed;
+  } catch (cause) {
+    throw new Error('Invalid response from cloudinary', { cause });
+  }
 }
 
 // https://cloudinary.com/documentation/admin_api#delete_resources_by_asset_id
