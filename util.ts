@@ -22,6 +22,16 @@ export async function tryGetFrontmatterCopy(
   return frontmatterCopy;
 }
 
+export function tryProcessFrontmatter(
+  mutationFn: (frontmatter: Record<string, unknown>) => void,
+  file: TFile,
+  app: App,
+) {
+  return app.fileManager
+    .processFrontMatter(file, mutationFn)
+    .catch(() => false);
+}
+
 export async function cachedRead(file: TFile, app: App) {
   return await app.vault.cachedRead(file);
 }
