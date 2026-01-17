@@ -46,7 +46,8 @@
 /* Settings */
 
 .mod-settings .plugin-rentry-integration {
-  .setting-item.is-disabled :is(.setting-item-description, .setting-item-name) {
+  .setting-item.is-disabled
+    :is(.setting-item-description, .setting-item-name, input[disabled]) {
     color: var(--text-faint);
   }
 
