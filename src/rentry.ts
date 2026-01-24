@@ -2,6 +2,7 @@
 
 import { requestUrl } from 'obsidian';
 import ky from 'ky';
+import { source } from 'common-tags';
 import { parse as parseCookie } from 'cookie';
 import { utf8CharacterCount } from './utf8CharacterCount.js';
 import { abortablePromise } from './util.js';
@@ -61,6 +62,10 @@ export async function create({
       text,
       edit_code: '',
       url: '',
+      metadata: source`
+        OPTION_DISABLE_SEARCH_ENGINE=true
+        OPTION_DISABLE_VIEWS=true
+      `,
     },
     endpoint: 'api/new',
     signal,
@@ -114,6 +119,7 @@ export async function update({
 
   checkTextCharacterLimit(text, commandVerb);
 
+  // TODO use metadata in payload when appropriate
   await executeRequest<OkRes>({
     payload: {
       text,
