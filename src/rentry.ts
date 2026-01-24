@@ -22,7 +22,8 @@ type ErrorRes = {
 
 type OkRes = { status: '200'; content: 'OK' };
 
-const baseUrl = 'https://rentry.co';
+const getBaseUrl = (useDotOrg?: boolean) =>
+  useDotOrg ? 'https://rentry.org' : 'https://rentry.co';
 
 // https://rentry.co/what: 200000 character limit for text field.
 
@@ -44,10 +45,12 @@ export async function create({
   id,
   text,
   signal,
+  useRentryDotOrg = false,
 }: {
   id?: string;
   text: string;
   signal?: AbortSignal;
+  useRentryDotOrg?: boolean;
 }) {
   const commandVerb = 'create';
 
@@ -62,6 +65,7 @@ export async function create({
     endpoint: 'api/new',
     signal,
     commandVerb,
+    baseUrl: getBaseUrl(useRentryDotOrg),
   });
 
   return {
@@ -75,10 +79,12 @@ export async function remove({
   id,
   editCode,
   signal,
+  useRentryDotOrg = false,
 }: {
   id: string;
   editCode: string;
   signal?: AbortSignal;
+  useRentryDotOrg?: boolean;
 }) {
   await executeRequest<OkRes>({
     payload: {
@@ -87,6 +93,7 @@ export async function remove({
     endpoint: `/api/delete/${id}`,
     signal,
     commandVerb: 'remove',
+    baseUrl: getBaseUrl(useRentryDotOrg),
   });
 }
 
@@ -95,10 +102,12 @@ export async function update({
   editCode,
   text,
   signal,
+  useRentryDotOrg = false,
 }: {
   id: string;
   editCode: string;
   text: string;
+  useRentryDotOrg?: boolean;
   signal?: AbortSignal;
 }) {
   const commandVerb = 'update';
@@ -110,13 +119,20 @@ export async function update({
       text,
       edit_code: editCode,
     },
+    baseUrl: getBaseUrl(useRentryDotOrg),
     endpoint: `api/edit/${id}`,
     signal,
     commandVerb,
   });
 }
 
-async function fetchCsrfMiddlewareToken({ signal }: { signal?: AbortSignal }) {
+async function fetchCsrfMiddlewareToken({
+  signal,
+  baseUrl = getBaseUrl(),
+}: {
+  signal?: AbortSignal;
+  baseUrl?: string;
+}) {
   try {
     // need to use requestUrl due to CORS
     const res = await abortablePromise(requestUrl(baseUrl), { signal });
@@ -139,18 +155,23 @@ async function executeRequest<T extends Record<string, unknown>>({
   endpoint,
   signal,
   commandVerb,
+  baseUrl = getBaseUrl(),
 }: {
   payload: Record<string, string>;
   endpoint: string;
   signal?: AbortSignal;
   commandVerb?: string;
+  baseUrl?: string;
 }) {
   const headers = {
     'Content-Type': 'application/x-www-form-urlencoded',
   };
 
   try {
-    const csrfmiddlewaretoken = await fetchCsrfMiddlewareToken({ signal });
+    const csrfmiddlewaretoken = await fetchCsrfMiddlewareToken({
+      signal,
+      baseUrl,
+    });
     const body = String(
       new URLSearchParams({ csrfmiddlewaretoken, ...payload }),
     );

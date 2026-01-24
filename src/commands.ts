@@ -50,6 +50,7 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
         cloudinaryApiKey,
         cloudinaryApiSecret,
         cloudinaryCloudName,
+        useRentryDotOrg,
       } = settings;
 
       const clearSpinner = plugin.renderStatusBarSpinner('Updating paste');
@@ -85,6 +86,7 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
               id: rentryId,
               editCode: rentryEditCode,
               text,
+              useRentryDotOrg,
             });
           })
           .then(() => {
@@ -178,6 +180,7 @@ export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
         cloudinaryApiKey,
         cloudinaryApiSecret,
         cloudinaryCloudName,
+        useRentryDotOrg,
       } = settings;
 
       plugin
@@ -206,7 +209,7 @@ export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
           );
 
           const pasteRemoved = rentryApi
-            .remove({ id: rentryId, editCode: rentryEditCode })
+            .remove({ id: rentryId, editCode: rentryEditCode, useRentryDotOrg })
             .then(() => {
               // embedCache prop should be removed independent of rentry props
               return tryProcessFrontmatter(
@@ -252,6 +255,7 @@ export const createRentry = (plugin: RentryIntegrationPlugin) => ({
         cloudinaryCloudName,
         includeFrontmatter,
         skipEmptyFrontmatterValues,
+        useRentryDotOrg,
       } = settings;
 
       const clearSpinner = plugin.renderStatusBarSpinner('Creating paste');
@@ -284,7 +288,7 @@ export const createRentry = (plugin: RentryIntegrationPlugin) => ({
         )
           .then((rentryText) =>
             rentryApi
-              .create({ text: rentryText })
+              .create({ text: rentryText, useRentryDotOrg })
               .then(({ id, url, editCode }) => {
                 return tryProcessFrontmatter(
                   (fm) => {

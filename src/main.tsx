@@ -33,12 +33,14 @@ interface RentryIntegrationPluginSettings {
   cloudinaryCloudName?: string;
   cloudinaryApiKey?: string;
   cloudinaryApiSecret?: string;
+  useRentryDotOrg: boolean;
 }
 
 const DEFAULT_SETTINGS: RentryIntegrationPluginSettings = {
   includeFrontmatter: false,
   skipEmptyFrontmatterValues: true,
   replaceEmbeds: false,
+  useRentryDotOrg: false,
 };
 
 export default class RentryIntegrationPlugin extends Plugin {
@@ -137,7 +139,7 @@ class SettingTab extends PluginSettingTab {
 
     const desc = (
       <>
-        Include frontmatter as a markdown table in rentry pastes.
+        Include frontmatter as a markdown table in Rentry pastes.
         <br />
         Will <em>not</em> include{' '}
         {rest.reverse().map((r) => (
@@ -175,7 +177,7 @@ class SettingTab extends PluginSettingTab {
         skipEmptyFrontmatterSetting = s;
         s.setName('Skip empty frontmatter values')
           .setDesc(
-            'Do not include frontmatter values that are empty in the rentry paste.',
+            'Do not include frontmatter values that are empty in the Rentry paste.',
           )
           .addToggle((toggle) => {
             toggle
@@ -186,7 +188,26 @@ class SettingTab extends PluginSettingTab {
               });
           })
           .setDisabled(!settings.includeFrontmatter);
-      });
+      })
+      .addSetting((s) =>
+        s
+          .setName('Use rentry.org')
+          .setDesc(
+            <>
+              Use <a href="https://rentry.org">rentry.org</a> for all calls to
+              Rentry. Can be useful if calls to{' '}
+              <a href="https://rentry.org">rentry.co</a> fail.
+            </>,
+          )
+          .addToggle((toggle) => {
+            toggle
+              .setValue(settings.useRentryDotOrg)
+              .onChange(async (value) => {
+                settings.useRentryDotOrg = value;
+                await plugin.saveSettings();
+              });
+          }),
+      );
 
     const cloudinarySettings: Setting[] = [];
     const embedSettingGroup = new SettingGroup(containerEl);
