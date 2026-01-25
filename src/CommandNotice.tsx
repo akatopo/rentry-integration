@@ -29,7 +29,7 @@ export function CommandNotice({
               window.open(rentryUrl);
             }}
           >
-            View at rentry.co
+            View at {new URL(rentryUrl).hostname}
           </button>
           <button
             $click={async (e: Event) => {
