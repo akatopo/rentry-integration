@@ -23,6 +23,11 @@ type ErrorRes = {
 
 type OkRes = { status: '200'; content: 'OK' };
 
+const defaultMetadata = source`
+  OPTION_DISABLE_SEARCH_ENGINE=true
+  OPTION_DISABLE_VIEWS=true
+`;
+
 const getBaseUrl = (useDotOrg?: boolean) =>
   useDotOrg ? 'https://rentry.org' : 'https://rentry.co';
 
@@ -62,10 +67,7 @@ export async function create({
       text,
       edit_code: '',
       url: '',
-      metadata: source`
-        OPTION_DISABLE_SEARCH_ENGINE=true
-        OPTION_DISABLE_VIEWS=true
-      `,
+      metadata: defaultMetadata,
     },
     endpoint: 'api/new',
     signal,
@@ -124,6 +126,7 @@ export async function update({
     payload: {
       text,
       edit_code: editCode,
+      update_mode: 'upsert', // use upsert update mode to keep initial metadata intact, see https://github.com/radude/rentry/blob/143f6faf195345a2f4c6d76089ff2c419c6db19d/example-edit.py#L61
     },
     baseUrl: getBaseUrl(useRentryDotOrg),
     endpoint: `api/edit/${id}`,
