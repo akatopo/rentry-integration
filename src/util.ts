@@ -1,7 +1,12 @@
-import type { TFile, App } from 'obsidian';
+import type { TAbstractFile, App } from 'obsidian';
+import { TFile } from 'obsidian';
 
 export function isRecord(o: unknown): o is Record<string, unknown> {
   return Object.prototype.toString.call(o).endsWith('Object]');
+}
+
+export function isMd(f: TAbstractFile): f is TFile {
+  return f instanceof TFile && (f.extension == 'md' || f.name.endsWith('.md'));
 }
 
 export function tryGetFrontmatterCopy(
