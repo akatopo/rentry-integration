@@ -27,35 +27,287 @@ import {
   removeEmbedCacheFromFrontmatterObject,
 } from './transforms.js';
 
-import type { TFile, App, Plugin } from 'obsidian';
+import type { TFile, App, Menu } from 'obsidian';
 import type RentryIntegrationPlugin from './main.js';
 import type { RentryEmbedCache, ResolvedEmbed } from './embeds.js';
 
-export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
-  id: 'update-rentry',
-  name: 'Update paste',
-  checkCallback: (checking: boolean) =>
-    editRentryCheckCallback(checking, plugin, (props) => {
-      if (!props) {
-        return;
-      }
+const commandInfo = [
+  {
+    id: 'update-rentry',
+    name: 'Update paste',
+    createCheckCallback:
+      (plugin: RentryIntegrationPlugin) => (checking: boolean) =>
+        editRentryCheckCallback(checking, plugin, updateRentryFromProps),
+    createMenuItemRenderer:
+      (title: string, plugin: RentryIntegrationPlugin) =>
+      (menu: Menu, file: TFile) => {
+        const { app } = plugin;
+        const [canUpdateRentry, updateProps] = fileHasRentryFrontmatterProps(
+          file,
+          app,
+        );
 
-      const { rentryEditCode, rentryId, rentryUrl, rentryEmbedCache, file } =
-        props;
-      const { app, settings } = plugin;
-      const {
+        if (!canUpdateRentry) {
+          return;
+        }
+
+        menu.addItem((item) => {
+          item
+            .setTitle(title)
+            .onClick(() => updateRentryFromProps(updateProps, plugin));
+        });
+      },
+  },
+  {
+    id: 'purge-embeds',
+    name: 'Purge leftover embeds',
+    createCheckCallback:
+      (plugin: RentryIntegrationPlugin) => (checking: boolean) =>
+        purgeEmbedsCheckCallback(checking, plugin, purgeEmbedsFromProps),
+    createMenuItemRenderer:
+      (title: string, plugin: RentryIntegrationPlugin) =>
+      (menu: Menu, file: TFile) => {
+        const { app } = plugin;
+        const [canPurgeEmbedCache, embedCacheProps] =
+          fileHasOnlyPopulatedEmbedCacheFrontmatterProp(file, app);
+
+        if (!canPurgeEmbedCache) {
+          return;
+        }
+
+        menu.addItem((item) => {
+          item
+            .setTitle(title)
+            .onClick(() => purgeEmbedsFromProps(embedCacheProps, plugin));
+        });
+      },
+  },
+  {
+    id: 'delete-rentry',
+    name: 'Delete paste',
+    createCheckCallback:
+      (plugin: RentryIntegrationPlugin) => (checking: boolean) =>
+        editRentryCheckCallback(checking, plugin, deleteRentryFromProps),
+    createMenuItemRenderer:
+      (title: string, plugin: RentryIntegrationPlugin) =>
+      (menu: Menu, file: TFile) => {
+        const { app } = plugin;
+        const [canUpdateRentry, updateProps] = fileHasRentryFrontmatterProps(
+          file,
+          app,
+        );
+
+        if (!canUpdateRentry) {
+          return;
+        }
+
+        menu.addItem((item) => {
+          item
+            .setTitle(title)
+            .onClick(() => deleteRentryFromProps(updateProps, plugin));
+        });
+      },
+  },
+  {
+    id: 'create-rentry',
+    name: 'Create paste',
+    createCheckCallback:
+      (plugin: RentryIntegrationPlugin) => (checking: boolean) =>
+        createRentryCheckCallback(checking, plugin, createRentryFromFile),
+    createMenuItemRenderer:
+      (title: string, plugin: RentryIntegrationPlugin) =>
+      (menu: Menu, file: TFile) => {
+        const { app } = plugin;
+        const [canUpdateRentry] = fileHasRentryFrontmatterProps(file, app);
+
+        if (canUpdateRentry) {
+          return;
+        }
+
+        menu.addItem((item) => {
+          item
+            .setTitle(title)
+            .onClick(() => createRentryFromFile({ file }, plugin));
+        });
+      },
+  },
+] as const;
+
+export const commands = commandInfo.map(
+  ({ id, name, createCheckCallback }) =>
+    (plugin: RentryIntegrationPlugin) => ({
+      checkCallback: createCheckCallback(plugin),
+      id,
+      name,
+    }),
+);
+
+export const menuItems = commandInfo.map(
+  ({ name: title, createMenuItemRenderer }) =>
+    (plugin: RentryIntegrationPlugin) =>
+      createMenuItemRenderer(title, plugin),
+);
+
+export function updateRentryFromProps(
+  props: ReturnType<typeof viewHasRentryFrontmatterProps>[1],
+  plugin: RentryIntegrationPlugin,
+) {
+  if (!props) {
+    return;
+  }
+
+  const { rentryEditCode, rentryId, rentryUrl, rentryEmbedCache, file } = props;
+  const { app, settings } = plugin;
+  const {
+    includeFrontmatter,
+    skipEmptyFrontmatterValues,
+    replaceEmbeds,
+    cloudinaryApiKey,
+    cloudinaryApiSecret,
+    cloudinaryCloudName,
+    useRentryDotOrg,
+  } = settings;
+
+  const clearSpinner = plugin.renderStatusBarSpinner('Updating paste');
+
+  trySyncEmbeds(
+    {
+      replaceEmbeds,
+      rentryEmbedCache,
+      cloudinaryApiKey,
+      cloudinaryApiSecret,
+      cloudinaryCloudName,
+    },
+    file,
+    app,
+  ).then((res) => {
+    const [newRentryEmbedCache, resolvedEmbeds] = res;
+
+    handleSyncEmbedsRes(res, plugin);
+
+    return getTextForRentry(
+      {
         includeFrontmatter,
         skipEmptyFrontmatterValues,
         replaceEmbeds,
-        cloudinaryApiKey,
-        cloudinaryApiSecret,
-        cloudinaryCloudName,
-        useRentryDotOrg,
-      } = settings;
+        embedCache: newRentryEmbedCache,
+        resolvedEmbeds,
+      },
+      file,
+      app,
+    )
+      .then((text) => {
+        return rentryApi.update({
+          id: rentryId,
+          editCode: rentryEditCode,
+          text,
+          useRentryDotOrg,
+        });
+      })
+      .then(() => {
+        plugin.notice('Paste updated', rentryUrl);
+      })
+      .catch((reason) => tryNoticeError(plugin, reason))
+      .finally(() => {
+        clearSpinner();
 
-      const clearSpinner = plugin.renderStatusBarSpinner('Updating paste');
+        // embed cache should be written regardless of rentry call success
+        // and should mutate frontmatter after being done with text transforms
+        if (newRentryEmbedCache) {
+          return tryProcessFrontmatter(
+            (fm) => {
+              fm.rentryEmbedCache = JSON.stringify(newRentryEmbedCache);
+            },
+            file,
+            app,
+          );
+        }
+      });
+  });
+}
 
-      trySyncEmbeds(
+export function purgeEmbedsFromProps(
+  props: ReturnType<typeof viewHasOnlyPopulatedEmbedCacheFrontmatterProp>[1],
+  plugin: RentryIntegrationPlugin,
+) {
+  if (!props) {
+    return;
+  }
+
+  const { app, settings } = plugin;
+  const { rentryEmbedCache, file } = props;
+
+  const {
+    replaceEmbeds,
+    cloudinaryApiKey,
+    cloudinaryApiSecret,
+    cloudinaryCloudName,
+  } = settings;
+
+  plugin
+    .confirmationModal({
+      title: 'Purge leftover embeds',
+      content: () => PurgeEmbedsModalContent({ filename: file.name }),
+      buttons: PurgeEmbedsModalButtons,
+    })
+    .then((res) => {
+      if (res !== 'confirm') {
+        return;
+      }
+
+      const clearSpinner = plugin.renderStatusBarSpinner('Deleting embeds');
+
+      promiseSettled(
+        tryPurgeEmbeds(
+          {
+            replaceEmbeds,
+            rentryEmbedCache,
+            cloudinaryApiKey,
+            cloudinaryApiSecret,
+            cloudinaryCloudName,
+          },
+          file,
+          app,
+        ),
+      )
+        .then((res) => handlePurgeEmbedsSettledRes(res, plugin))
+        .finally(() => clearSpinner());
+    });
+}
+
+export function deleteRentryFromProps(
+  props: ReturnType<typeof viewHasRentryFrontmatterProps>[1],
+  plugin: RentryIntegrationPlugin,
+) {
+  if (!props) {
+    return;
+  }
+
+  const { app, settings } = plugin;
+  const { rentryEditCode, rentryId, rentryEmbedCache, file } = props;
+
+  const {
+    replaceEmbeds,
+    cloudinaryApiKey,
+    cloudinaryApiSecret,
+    cloudinaryCloudName,
+    useRentryDotOrg,
+  } = settings;
+
+  plugin
+    .confirmationModal({
+      title: 'Delete paste',
+      content: () => DeleteModalContent({ filename: file.name }),
+      buttons: DeleteModalButtons,
+    })
+    .then((res) => {
+      if (res !== 'confirm') {
+        return;
+      }
+
+      const clearSpinner = plugin.renderStatusBarSpinner('Deleting paste');
+
+      const embedsPurged = tryPurgeEmbeds(
         {
           replaceEmbeds,
           rentryEmbedCache,
@@ -65,264 +317,120 @@ export const updateRentry = (plugin: RentryIntegrationPlugin) => ({
         },
         file,
         app,
-      ).then((res) => {
-        const [newRentryEmbedCache, resolvedEmbeds] = res;
+      );
 
-        handleSyncEmbedsRes(res, plugin);
-
-        return getTextForRentry(
-          {
-            includeFrontmatter,
-            skipEmptyFrontmatterValues,
-            replaceEmbeds,
-            embedCache: newRentryEmbedCache,
-            resolvedEmbeds,
-          },
-          file,
-          app,
-        )
-          .then((text) => {
-            return rentryApi.update({
-              id: rentryId,
-              editCode: rentryEditCode,
-              text,
-              useRentryDotOrg,
-            });
-          })
-          .then(() => {
-            plugin.notice('Paste updated', rentryUrl);
-          })
-          .catch((reason) => tryNoticeError(plugin, reason))
-          .finally(() => {
-            clearSpinner();
-
-            // embed cache should be written regardless of rentry call success
-            // and should mutate frontmatter after being done with text transforms
-            if (newRentryEmbedCache) {
-              return tryProcessFrontmatter(
-                (fm) => {
-                  fm.rentryEmbedCache = JSON.stringify(newRentryEmbedCache);
-                },
-                file,
-                app,
-              );
-            }
-          });
-      });
-    }),
-});
-
-export const purgeLeftoverEmbeds = (plugin: RentryIntegrationPlugin) => ({
-  id: 'purge-embeds',
-  name: 'Purge leftover embeds',
-  checkCallback: (checking: boolean) =>
-    purgeEmbedsCheckCallback(checking, plugin, (props) => {
-      if (!props) {
-        return;
-      }
-
-      const { app, settings } = plugin;
-      const { rentryEmbedCache, file } = props;
-
-      const {
-        replaceEmbeds,
-        cloudinaryApiKey,
-        cloudinaryApiSecret,
-        cloudinaryCloudName,
-      } = settings;
-
-      plugin
-        .confirmationModal({
-          title: 'Purge leftover embeds',
-          content: () => PurgeEmbedsModalContent({ filename: file.name }),
-          buttons: PurgeEmbedsModalButtons,
-        })
-        .then((res) => {
-          if (res !== 'confirm') {
-            return;
-          }
-
-          const clearSpinner = plugin.renderStatusBarSpinner('Deleting embeds');
-
-          promiseSettled(
-            tryPurgeEmbeds(
-              {
-                replaceEmbeds,
-                rentryEmbedCache,
-                cloudinaryApiKey,
-                cloudinaryApiSecret,
-                cloudinaryCloudName,
-              },
-              file,
-              app,
-            ),
-          )
-            .then((res) => handlePurgeEmbedsSettledRes(res, plugin))
-            .finally(() => clearSpinner());
-        });
-    }),
-});
-
-export const deleteRentry = (plugin: RentryIntegrationPlugin) => ({
-  id: 'delete-rentry',
-  name: 'Delete paste',
-  checkCallback: (checking: boolean) =>
-    editRentryCheckCallback(checking, plugin, (props) => {
-      if (!props) {
-        return;
-      }
-
-      const { app, settings } = plugin;
-      const { rentryEditCode, rentryId, rentryEmbedCache, file } = props;
-
-      const {
-        replaceEmbeds,
-        cloudinaryApiKey,
-        cloudinaryApiSecret,
-        cloudinaryCloudName,
-        useRentryDotOrg,
-      } = settings;
-
-      plugin
-        .confirmationModal({
-          title: 'Delete paste',
-          content: () => DeleteModalContent({ filename: file.name }),
-          buttons: DeleteModalButtons,
-        })
-        .then((res) => {
-          if (res !== 'confirm') {
-            return;
-          }
-
-          const clearSpinner = plugin.renderStatusBarSpinner('Deleting paste');
-
-          const embedsPurged = tryPurgeEmbeds(
-            {
-              replaceEmbeds,
-              rentryEmbedCache,
-              cloudinaryApiKey,
-              cloudinaryApiSecret,
-              cloudinaryCloudName,
+      const pasteRemoved = rentryApi
+        .remove({ id: rentryId, editCode: rentryEditCode, useRentryDotOrg })
+        .then(() => {
+          // embedCache prop should be removed independent of rentry props
+          return tryProcessFrontmatter(
+            (fm) => {
+              removeRentryPropsFromFrontmatterObject(fm, true);
             },
             file,
             app,
           );
-
-          const pasteRemoved = rentryApi
-            .remove({ id: rentryId, editCode: rentryEditCode, useRentryDotOrg })
-            .then(() => {
-              // embedCache prop should be removed independent of rentry props
-              return tryProcessFrontmatter(
-                (fm) => {
-                  removeRentryPropsFromFrontmatterObject(fm, true);
-                },
-                file,
-                app,
-              );
-            });
-
-          Promise.allSettled([embedsPurged, pasteRemoved])
-            .then((results) => {
-              const [embedsPurgedRes, pasteRemovedRes] = results;
-              handlePurgeEmbedsSettledRes(embedsPurgedRes, plugin);
-
-              if (pasteRemovedRes.status === 'fulfilled') {
-                plugin.notice('Paste deleted');
-              } else {
-                tryNoticeError(plugin, pasteRemovedRes.reason);
-              }
-            })
-            .finally(() => {
-              clearSpinner();
-            });
         });
-    }),
-});
 
-export const createRentry = (plugin: RentryIntegrationPlugin) => ({
-  id: 'create-rentry',
-  name: 'Create paste',
-  checkCallback: (checking: boolean) =>
-    createRentryCheckCallback(checking, plugin, ({ file }) => {
-      if (!file) {
-        return;
-      }
-      const { app, settings } = plugin;
-      const {
-        replaceEmbeds,
-        cloudinaryApiKey,
-        cloudinaryApiSecret,
-        cloudinaryCloudName,
-        includeFrontmatter,
+      Promise.allSettled([embedsPurged, pasteRemoved])
+        .then((results) => {
+          const [embedsPurgedRes, pasteRemovedRes] = results;
+          handlePurgeEmbedsSettledRes(embedsPurgedRes, plugin);
+
+          if (pasteRemovedRes.status === 'fulfilled') {
+            plugin.notice('Paste deleted');
+          } else {
+            tryNoticeError(plugin, pasteRemovedRes.reason);
+          }
+        })
+        .finally(() => {
+          clearSpinner();
+        });
+    });
+}
+
+export function createRentryFromFile(
+  { file }: { file?: TFile },
+  plugin: RentryIntegrationPlugin,
+) {
+  if (!file) {
+    return;
+  }
+  const { app, settings } = plugin;
+  const {
+    replaceEmbeds,
+    cloudinaryApiKey,
+    cloudinaryApiSecret,
+    cloudinaryCloudName,
+    includeFrontmatter,
+    skipEmptyFrontmatterValues,
+    useRentryDotOrg,
+  } = settings;
+
+  const clearSpinner = plugin.renderStatusBarSpinner('Creating paste');
+
+  // no embed cache should be used, maybe should try purging if a cache exists
+  trySyncEmbeds(
+    {
+      replaceEmbeds,
+      cloudinaryApiKey,
+      cloudinaryApiSecret,
+      cloudinaryCloudName,
+    },
+    file,
+    app,
+  ).then((res) => {
+    const [newRentryEmbedCache, resolvedEmbeds] = res;
+
+    handleSyncEmbedsRes(res, plugin);
+
+    return getTextForRentry(
+      {
         skipEmptyFrontmatterValues,
-        useRentryDotOrg,
-      } = settings;
+        includeFrontmatter,
+        replaceEmbeds,
+        resolvedEmbeds,
+        embedCache: newRentryEmbedCache,
+      },
+      file,
+      app,
+    )
+      .then((rentryText) =>
+        rentryApi
+          .create({ text: rentryText, useRentryDotOrg })
+          .then(({ id, url, editCode }) => {
+            return tryProcessFrontmatter(
+              (fm) => {
+                fm.rentryId = id;
+                fm.rentryUrl = url;
+                fm.rentryEditCode = editCode;
+              },
+              file,
+              app,
+            ).then(() => ({ id, url, editCode }));
+          }),
+      )
+      .then((res) => {
+        plugin.notice('Paste created', res?.url);
+      })
+      .catch((reason) => tryNoticeError(plugin, reason))
+      .finally(() => {
+        clearSpinner();
 
-      const clearSpinner = plugin.renderStatusBarSpinner('Creating paste');
-
-      // no embed cache should be used, maybe should try purging if a cache exists
-      trySyncEmbeds(
-        {
-          replaceEmbeds,
-          cloudinaryApiKey,
-          cloudinaryApiSecret,
-          cloudinaryCloudName,
-        },
-        file,
-        app,
-      ).then((res) => {
-        const [newRentryEmbedCache, resolvedEmbeds] = res;
-
-        handleSyncEmbedsRes(res, plugin);
-
-        return getTextForRentry(
-          {
-            skipEmptyFrontmatterValues,
-            includeFrontmatter,
-            replaceEmbeds,
-            resolvedEmbeds,
-            embedCache: newRentryEmbedCache,
-          },
-          file,
-          app,
-        )
-          .then((rentryText) =>
-            rentryApi
-              .create({ text: rentryText, useRentryDotOrg })
-              .then(({ id, url, editCode }) => {
-                return tryProcessFrontmatter(
-                  (fm) => {
-                    fm.rentryId = id;
-                    fm.rentryUrl = url;
-                    fm.rentryEditCode = editCode;
-                  },
-                  file,
-                  app,
-                ).then(() => ({ id, url, editCode }));
-              }),
-          )
-          .then((res) => {
-            plugin.notice('Paste created', res?.url);
-          })
-          .catch((reason) => tryNoticeError(plugin, reason))
-          .finally(() => {
-            clearSpinner();
-
-            // embed cache should be written regardless of rentry call success
-            // and should mutate frontmatter after being done with text transforms
-            if (newRentryEmbedCache) {
-              return tryProcessFrontmatter(
-                (fm) => {
-                  fm.rentryEmbedCache = JSON.stringify(newRentryEmbedCache);
-                },
-                file,
-                app,
-              );
-            }
-          });
+        // embed cache should be written regardless of rentry call success
+        // and should mutate frontmatter after being done with text transforms
+        if (newRentryEmbedCache) {
+          return tryProcessFrontmatter(
+            (fm) => {
+              fm.rentryEmbedCache = JSON.stringify(newRentryEmbedCache);
+            },
+            file,
+            app,
+          );
+        }
       });
-    }),
-});
+  });
+}
 
 function tryNoticeError(plugin: RentryIntegrationPlugin, reason: unknown) {
   if (!Error.isError(reason)) {
@@ -338,12 +446,18 @@ function tryNoticeError(plugin: RentryIntegrationPlugin, reason: unknown) {
 
 function purgeEmbedsCheckCallback(
   checking: boolean,
-  plugin: Plugin,
-  fn: (props: ReturnType<typeof hasOnlyEmbedCacheFrontmatterProp>[1]) => void,
+  plugin: RentryIntegrationPlugin,
+  fn: (
+    props: ReturnType<typeof viewHasOnlyPopulatedEmbedCacheFrontmatterProp>[1],
+    plugin: RentryIntegrationPlugin,
+  ) => void,
 ) {
   const { app } = plugin;
   const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
-  const [hasProps, props] = hasOnlyEmbedCacheFrontmatterProp(markdownView, app);
+  const [hasProps, props] = viewHasOnlyPopulatedEmbedCacheFrontmatterProp(
+    markdownView,
+    app,
+  );
   const shouldDisplayCommand = !!markdownView && hasProps;
 
   if (checking && shouldDisplayCommand) {
@@ -352,17 +466,20 @@ function purgeEmbedsCheckCallback(
   if (!shouldDisplayCommand) {
     return;
   }
-  return fn(props);
+  return fn(props, plugin);
 }
 
 function editRentryCheckCallback(
   checking: boolean,
-  plugin: Plugin,
-  fn: (props: ReturnType<typeof hasRentryFrontmatterProps>[1]) => void,
+  plugin: RentryIntegrationPlugin,
+  fn: (
+    props: ReturnType<typeof viewHasRentryFrontmatterProps>[1],
+    plugin: RentryIntegrationPlugin,
+  ) => void,
 ) {
   const { app } = plugin;
   const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
-  const [hasProps, props] = hasRentryFrontmatterProps(markdownView, app);
+  const [hasProps, props] = viewHasRentryFrontmatterProps(markdownView, app);
   const shouldDisplayCommand = !!markdownView && hasProps;
 
   if (checking && shouldDisplayCommand) {
@@ -371,17 +488,17 @@ function editRentryCheckCallback(
   if (!shouldDisplayCommand) {
     return;
   }
-  return fn(props);
+  return fn(props, plugin);
 }
 
 function createRentryCheckCallback(
   checking: boolean,
-  plugin: Plugin,
-  fn: ({ file }: { file?: TFile }) => void,
+  plugin: RentryIntegrationPlugin,
+  fn: ({ file }: { file?: TFile }, plugin: RentryIntegrationPlugin) => void,
 ) {
   const { app } = plugin;
   const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
-  const [hasProps] = hasRentryFrontmatterProps(markdownView, app);
+  const [hasProps] = viewHasRentryFrontmatterProps(markdownView, app);
   const shouldDisplayCommand = !!markdownView && !hasProps;
 
   if (checking && shouldDisplayCommand) {
@@ -390,10 +507,10 @@ function createRentryCheckCallback(
   if (!shouldDisplayCommand) {
     return;
   }
-  return fn({ file: markdownView?.file ?? undefined });
+  return fn({ file: markdownView?.file ?? undefined }, plugin);
 }
 
-function hasOnlyEmbedCacheFrontmatterProp(
+function viewHasOnlyPopulatedEmbedCacheFrontmatterProp(
   markdownView: MarkdownView | null,
   app: App,
 ) {
@@ -402,6 +519,18 @@ function hasOnlyEmbedCacheFrontmatterProp(
     return checkFailed;
   }
   const { file } = markdownView;
+
+  if (!file) {
+    return checkFailed;
+  }
+  return fileHasOnlyPopulatedEmbedCacheFrontmatterProp(file, app);
+}
+
+export function fileHasOnlyPopulatedEmbedCacheFrontmatterProp(
+  file: TFile,
+  app: App,
+) {
+  const checkFailed = [false, undefined] as const;
   if (!file) {
     return checkFailed;
   }
@@ -411,13 +540,18 @@ function hasOnlyEmbedCacheFrontmatterProp(
     frontmatter ?? {};
 
   if (rentryEmbedCache && !rentryId) {
+    const parsed = tryParseEmbedCache(rentryEmbedCache);
+
+    if (!Object.keys(parsed?.pathMap ?? {}).length) {
+      return checkFailed;
+    }
     return [
       true,
       {
         rentryEditCode: rentryEditCode ? String(rentryEditCode) : undefined,
         rentryId: undefined,
         rentryUrl: rentryUrl ? String(rentryUrl) : undefined,
-        rentryEmbedCache: tryParseEmbedCache(rentryEmbedCache),
+        rentryEmbedCache: parsed,
         file,
       },
     ] as const;
@@ -425,7 +559,7 @@ function hasOnlyEmbedCacheFrontmatterProp(
   return checkFailed;
 }
 
-function hasRentryFrontmatterProps(
+function viewHasRentryFrontmatterProps(
   markdownView: MarkdownView | null,
   app: App,
 ) {
@@ -438,6 +572,11 @@ function hasRentryFrontmatterProps(
     return checkFailed;
   }
 
+  return fileHasRentryFrontmatterProps(file, app);
+}
+
+export function fileHasRentryFrontmatterProps(file: TFile, app: App) {
+  const checkFailed = [false, undefined] as const;
   const { frontmatter } = app.metadataCache.getFileCache(file) ?? {};
   const { rentryId, rentryEditCode, rentryUrl, rentryEmbedCache } =
     frontmatter ?? {};

@@ -8,14 +8,12 @@ import {
   Setting,
   SettingGroup,
   Notice,
+  Menu,
+  MenuItem,
+  TAbstractFile,
 } from 'obsidian';
 
-import {
-  updateRentry,
-  deleteRentry,
-  createRentry,
-  purgeLeftoverEmbeds,
-} from './commands.js';
+import { commands, menuItems } from './commands.js';
 import { rentryPropNames } from './frontmatter-props.js';
 import { CommandNotice } from './CommandNotice.js';
 import { StatusBarSpinner } from './StatusBarSpinner.js';
@@ -23,6 +21,7 @@ import {
   ConfirmationModal,
   type ConfirmationModalRes,
 } from './ConfirmationModal.js';
+import { isMd } from './util.js';
 
 import type { ButtonsRenderFunc } from './ConfirmationModal.js';
 
@@ -44,22 +43,47 @@ const DEFAULT_SETTINGS: RentryIntegrationPluginSettings = {
 };
 
 export default class RentryIntegrationPlugin extends Plugin {
-  settings: RentryIntegrationPluginSettings;
-  statusBarItem: ReturnType<Plugin['addStatusBarItem']>;
+  settings!: RentryIntegrationPluginSettings;
+  statusBarItem!: ReturnType<Plugin['addStatusBarItem']>;
 
   async onload() {
     await this.loadSettings();
 
-    [updateRentry, deleteRentry, createRentry, purgeLeftoverEmbeds].forEach(
-      (createCommand) => {
-        this.addCommand(createCommand(this));
-      },
+    commands.forEach((createCommand) => this.addCommand(createCommand(this)));
+    const menuItemRenderers = menuItems.map((createRenderer) =>
+      createRenderer(this),
     );
+    const renderMenuItems = (m: Menu, file: TAbstractFile) => {
+      if (!isMd(file)) {
+        return;
+      }
 
-    // This adds a settings tab so the user can configure various aspects of the plugin
+      menuItemRenderers.forEach((renderer) => renderer(m, file));
+    };
+
     this.addSettingTab(new SettingTab(this.app, this));
 
     this.statusBarItem = this.addStatusBarItem();
+
+    this.registerEvent(
+      this.app.workspace.on('file-menu', (menu, file) => {
+        if (!isMd(file)) {
+          return;
+        }
+
+        // Use private setSubmenu() API if available, see https://forum.obsidian.md/t/make-setsubmenu-public-api/59175
+        if (Object.hasOwn(MenuItem.prototype, 'setSubmenu')) {
+          menu.addItem((subItem) => {
+            const submenu = subItem as MenuItem & { setSubmenu: () => Menu };
+            submenu.setTitle('Rentry integration');
+            const sub = submenu.setSubmenu();
+            renderMenuItems(sub, file);
+          });
+        } else {
+          renderMenuItems(menu, file);
+        }
+      }),
+    );
   }
 
   onunload() {}
