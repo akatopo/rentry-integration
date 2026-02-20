@@ -76,8 +76,6 @@ export async function upload({
   formData.append('api_key', apiKey);
   formData.append('file', file);
 
-  console.log(formData);
-
   const res = await executeRequest({
     body: formData,
     endpoint: `${cloudName}/image/upload`,
