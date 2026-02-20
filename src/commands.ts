@@ -240,12 +240,8 @@ export function purgeEmbedsFromProps(
   const { app, settings } = plugin;
   const { rentryEmbedCache, file } = props;
 
-  const {
-    replaceEmbeds,
-    cloudinaryApiKey,
-    cloudinaryApiSecret,
-    cloudinaryCloudName,
-  } = settings;
+  const { cloudinaryApiKey, cloudinaryApiSecret, cloudinaryCloudName } =
+    settings;
 
   plugin
     .confirmationModal({
@@ -263,7 +259,6 @@ export function purgeEmbedsFromProps(
       promiseSettled(
         tryPurgeEmbeds(
           {
-            replaceEmbeds,
             rentryEmbedCache,
             cloudinaryApiKey,
             cloudinaryApiSecret,
@@ -755,39 +750,9 @@ function tryPurgeEmbeds(
           app,
         )
       : Promise.resolve([false, undefined] as const)
-  )
-    .catch(() => {
-      return [false, undefined] as const;
-    })
-    .then(([safeToRemoveCache, newRentryEmbedCache]) => {
-      let action;
-
-      if (safeToRemoveCache) {
-        // only remove the embed cache
-
-        action = tryProcessFrontmatter(
-          (fm) => {
-            removeEmbedCacheFromFrontmatterObject(fm);
-          },
-          file,
-          app,
-        );
-      } else if (newRentryEmbedCache) {
-        // update embed cache with leftover unpurged assets
-
-        action = tryProcessFrontmatter(
-          (fm) => {
-            fm.rentryEmbedCache = JSON.stringify(newRentryEmbedCache);
-          },
-          file,
-          app,
-        );
-      }
-
-      return (action ?? Promise.resolve()).then(
-        () => [safeToRemoveCache, newRentryEmbedCache] as const,
-      );
-    });
+  ).catch(() => {
+    return [false, undefined] as const;
+  });
 }
 
 async function handlePurgeEmbedsSettledRes(
