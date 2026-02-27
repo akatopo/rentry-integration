@@ -115,14 +115,14 @@ export function tryRenderFrontmatterText(frontmatter: unknown) {
       maxColLength[0],
     )} | ${padLabelWithSpaces(valueColLabel, maxColLength[1])} |
     | ${fillWithDashes(propColLabel, maxColLength[0])} | ${fillWithDashes(
-    valueColLabel,
-    maxColLength[1],
-  )} |
+      valueColLabel,
+      maxColLength[1],
+    )} |
     ${rows}
   `;
 }
 
-export async function replaceResolvedEmbeds(
+export function replaceResolvedEmbeds(
   resolvedEmbeds: ResolvedEmbed[],
   embedData: RentryEmbedCache,
   text: string,
