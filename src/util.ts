@@ -2,7 +2,9 @@ import type { TAbstractFile, App } from 'obsidian';
 import { TFile } from 'obsidian';
 
 export function isRecord(o: unknown): o is Record<string, unknown> {
-  return Object.prototype.toString.call(o).endsWith('Object]');
+  return (
+    (Reflect.getPrototypeOf({})?.toString?.call(o) as string | undefined) ?? ''
+  ).endsWith('Object]');
 }
 
 export function isMd(f: TAbstractFile): f is TFile {
@@ -13,13 +15,14 @@ export function tryGetFrontmatterCopy(
   file: TFile,
   app: App,
 ): Promise<Record<string, unknown>> {
-  // const { fileManager } = app;
   let frontmatterCopy = {};
   return tryProcessFrontmatter(
     (fm) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const deepCopy = JSON.parse(JSON.stringify(fm));
-
-      frontmatterCopy = deepCopy;
+      if (isRecord(deepCopy)) {
+        frontmatterCopy = deepCopy;
+      }
     },
     file,
     app,
@@ -50,6 +53,7 @@ export async function getNoteTextWithoutFrontmatter(file: TFile, app: App) {
 
 export function tryJsonParse(s: string) {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return JSON.parse(s);
   } catch (error) {
     return undefined;
@@ -66,18 +70,16 @@ export function abortablePromise<T>(
 ) {
   return new Promise<T>((resolve, reject) => {
     if (signal?.aborted) {
-      reject(signal.reason);
+      reject(new Error(String(signal.reason)));
     }
 
     signal?.addEventListener('abort', () => {
-      reject(signal.reason);
+      reject(new Error(String(signal.reason)));
     });
 
-    try {
-      p.then((res) => resolve(res)).catch((reason) => reject(reason));
-    } catch (error) {
-      reject(error);
-    }
+    p.then((res) => resolve(res)).catch((reason) =>
+      reject(new Error('Abortable had an exception', { cause: reason })),
+    );
   });
 }
 
@@ -97,14 +99,14 @@ export function* takeN<T>(n: number, iterable: Iterable<T>) {
   }
 
   let index = 0;
-  let array: T[] = new Array(n);
+  let array = new Array<T>(n);
 
   for (const value of iterable) {
     array[index] = value;
     if (index === n - 1) {
       // N-sized array
       yield array;
-      array = new Array(n);
+      array = new Array<T>(n);
       index = 0;
       continue;
     }

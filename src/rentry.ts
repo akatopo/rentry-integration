@@ -1,6 +1,7 @@
 // see https://github.com/microsoft/TypeScript/issues/45167 for Error.cause
 
 import { requestUrl } from 'obsidian';
+// eslint-disable-next-line no-restricted-imports
 import ky from 'ky';
 import { source } from 'common-tags';
 import { parse as parseCookie } from 'cookie';
@@ -36,7 +37,8 @@ const getBaseUrl = (useDotOrg?: boolean) =>
 function checkTextCharacterLimit(s: string, commandVerb: string) {
   const textCharacterLimit = 200_000;
   const length = utf8CharacterCount(s);
-  const numFmt = new Intl.NumberFormat().format;
+  const intl = new Intl.NumberFormat();
+  const numFmt = (v: number) => intl.format(v);
 
   if (length > textCharacterLimit) {
     throw new Error(
@@ -48,12 +50,12 @@ function checkTextCharacterLimit(s: string, commandVerb: string) {
 }
 
 export async function create({
-  id,
+  // id,
   text,
   signal,
   useRentryDotOrg = false,
 }: {
-  id?: string;
+  // id?: string;
   text: string;
   signal?: AbortSignal;
   useRentryDotOrg?: boolean;

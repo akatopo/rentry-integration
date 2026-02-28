@@ -37,7 +37,16 @@ const commandInfo = [
     name: 'Update paste',
     createCheckCallback:
       (plugin: RentryIntegrationPlugin) => (checking: boolean) =>
-        editRentryCheckCallback(checking, plugin, updateRentryFromProps),
+        editRentryCheckCallback(
+          checking,
+          plugin,
+          (
+            props: ReturnType<typeof viewHasRentryFrontmatterProps>[1],
+            plugin: RentryIntegrationPlugin,
+          ) => {
+            void updateRentryFromProps(props, plugin);
+          },
+        ),
     createMenuItemRenderer:
       (title: string, plugin: RentryIntegrationPlugin) =>
       (menu: Menu, file: TFile) => {
@@ -113,7 +122,20 @@ const commandInfo = [
     name: 'Create paste',
     createCheckCallback:
       (plugin: RentryIntegrationPlugin) => (checking: boolean) =>
-        createRentryCheckCallback(checking, plugin, createRentryFromFile),
+        createRentryCheckCallback(
+          checking,
+          plugin,
+          (
+            {
+              file,
+            }: {
+              file?: TFile;
+            },
+            plugin: RentryIntegrationPlugin,
+          ) => {
+            void createRentryFromFile({ file }, plugin);
+          },
+        ),
     createMenuItemRenderer:
       (title: string, plugin: RentryIntegrationPlugin) =>
       (menu: Menu, file: TFile) => {
@@ -189,7 +211,7 @@ export async function updateRentryFromProps(
     handleSyncEmbedsRes(res, plugin);
   }
 
-  return getTextForRentry(
+  getTextForRentry(
     {
       includeFrontmatter,
       skipEmptyFrontmatterValues,
@@ -243,7 +265,7 @@ export function purgeEmbedsFromProps(
   const { cloudinaryApiKey, cloudinaryApiSecret, cloudinaryCloudName } =
     settings;
 
-  plugin
+  void plugin
     .confirmationModal({
       title: 'Purge leftover embeds',
       content: () => PurgeEmbedsModalContent({ filename: file.name }),
@@ -269,7 +291,10 @@ export function purgeEmbedsFromProps(
         ),
       )
         .then((res) => handlePurgeEmbedsSettledRes(res, file, plugin))
-        .finally(() => clearSpinner());
+        .finally(() => clearSpinner())
+        .catch(() => {
+          // ignored
+        });
     });
 }
 
@@ -292,7 +317,7 @@ export function deleteRentryFromProps(
     useRentryDotOrg,
   } = settings;
 
-  plugin
+  void plugin
     .confirmationModal({
       title: 'Delete paste',
       content: () => DeleteModalContent({ filename: file.name }),
@@ -348,6 +373,9 @@ export function deleteRentryFromProps(
         })
         .finally(() => {
           clearSpinner();
+        })
+        .catch(() => {
+          // ignored
         });
     });
 }
@@ -652,7 +680,7 @@ async function applyTextTransforms(
 ) {
   let text = await cachedRead(file, app);
   if (replaceEmbeds && resolvedEmbeds && embedCache) {
-    text = await replaceResolvedEmbeds(resolvedEmbeds, embedCache, text);
+    text = replaceResolvedEmbeds(resolvedEmbeds, embedCache, text);
   }
 
   return removeFrontmatterFromText(text, file, app);

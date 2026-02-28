@@ -1,6 +1,7 @@
 // see https://github.com/microsoft/TypeScript/issues/45167 for Error.cause
 
 import { requestUrl } from 'obsidian';
+// eslint-disable-next-line no-restricted-imports
 import ky from 'ky';
 // @ts-expect-error
 import toHex from 'es-arraybuffer-base64/Uint8Array.prototype.toHex';
@@ -67,7 +68,7 @@ export async function upload({
 
   // TODO: use Uint8Array.toHex() once available
   // see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array/toHex#browser_compatibility
-  const signature = toHex(new Uint8Array(digestBytes));
+  const signature = toHex(new Uint8Array(digestBytes)) as string;
 
   formData.append('asset_folder', assetFolder);
   formData.append('format', format);
@@ -76,6 +77,7 @@ export async function upload({
   formData.append('api_key', apiKey);
   formData.append('file', file);
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const res = await executeRequest({
     body: formData,
     endpoint: `${cloudName}/image/upload`,
@@ -113,6 +115,7 @@ export async function deleteByAssetId({
     searchParams.append('asset_ids[]', id);
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const res = await executeRequest({
     body: String(searchParams),
     endpoint: `${cloudName}/resources`,
@@ -169,6 +172,7 @@ async function executeRequest({
   };
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const res = bypassCors
       ? (
           await abortablePromise(
@@ -187,6 +191,7 @@ async function executeRequest({
           signal,
         }).json();
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return res;
   } catch (cause) {
     throw new Error(

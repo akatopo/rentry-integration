@@ -88,7 +88,12 @@ export function getStaleEmbedsAndUploadPaths(
   return [staleEmbeds, uploadPaths] as const;
 }
 
-export function tryParseEmbedCache(s: string) {
+export function tryParseEmbedCache(s: unknown) {
+  if (typeof s !== 'string') {
+    return undefined;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const jsonParsed = tryJsonParse(s);
   if (jsonParsed === undefined || !isRecord(jsonParsed)) {
     return undefined;
@@ -156,8 +161,8 @@ export async function purgeEmbeds(
     cloudinaryCloudName: string;
     rentryEmbedCache?: RentryEmbedCache;
   },
-  file: TFile,
-  app: App,
+  _file: TFile,
+  _app: App,
 ) {
   const pathMap = rentryEmbedCache?.pathMap ?? {};
   // We're not going to be using the folder name so no init

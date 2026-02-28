@@ -36,7 +36,7 @@ export function h(
         return;
       }
       el.addEventListener(name.slice(1), (e) => {
-        return value(e);
+        return tryCall(value, e);
       });
     } else {
       el.setAttribute(name, String(value));
@@ -83,4 +83,12 @@ function createElementWithProps(type: string) {
 
 function asArray<T>(x: T) {
   return [x].flat();
+}
+
+function tryCall(f: unknown, ...args: unknown[]): unknown {
+  try {
+    return (f as (...args: unknown[]) => unknown)(...args);
+  } catch (e) {
+    return undefined;
+  }
 }

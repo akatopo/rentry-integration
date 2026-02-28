@@ -56,7 +56,8 @@ export function tryRenderFrontmatterText(frontmatter: unknown) {
   if (!isRecord(frontmatter)) {
     return '';
   }
-  const { escape: escapeMd } = new TurndownService();
+  const turndown = new TurndownService();
+  const escapeMd = (s: string) => turndown.escape(s);
 
   // TODO Could look into better handling of "wide" characters like emoji for calculating col length, see how prettier does it
 
@@ -72,6 +73,8 @@ export function tryRenderFrontmatterText(frontmatter: unknown) {
         .map((s) => escapeMd(x.length > 1 ? `- ${s}` : String(s)))
         .join(' \\n ');
     }
+    // we don't expect x to be an object
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return String(x);
   };
   const frontmatterEntries = [...Object.entries(frontmatter)].map(

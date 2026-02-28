@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { h, Fragment } from './h.js';
 
 import {
@@ -89,7 +88,8 @@ export default class RentryIntegrationPlugin extends Plugin {
   onunload() {}
 
   async loadSettings() {
-    this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
+    const loadedData = (await this.loadData()) as Record<string, unknown>;
+    this.settings = { ...DEFAULT_SETTINGS, ...loadedData };
   }
 
   async saveSettings() {
@@ -181,26 +181,28 @@ class SettingTab extends PluginSettingTab {
     const mainSettingGroup = new SettingGroup(containerEl);
 
     mainSettingGroup
-      .addSetting((s) =>
-        s
-          .setName('Include frontmatter')
-          .setDesc(desc)
-          .addToggle((toggle) => {
-            toggle
-              .setValue(settings.includeFrontmatter)
-              .onChange(async (value) => {
-                settings.includeFrontmatter = value;
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                skipEmptyFrontmatterSetting!.setDisabled(!value);
+      .addSetting(
+        (s) =>
+          void s
+            .setName('Include frontmatter')
+            .setDesc(desc)
+            .addToggle((toggle) => {
+              toggle
+                .setValue(settings.includeFrontmatter)
+                .onChange(async (value) => {
+                  settings.includeFrontmatter = value;
 
-                await plugin.saveSettings();
-              });
-          }),
+                  skipEmptyFrontmatterSetting!.setDisabled(!value);
+
+                  await plugin.saveSettings();
+                });
+            }),
       )
       .addSetting((s) => {
         skipEmptyFrontmatterSetting = s;
         s.setName('Skip empty frontmatter values')
           .setDesc(
+            // eslint-disable-next-line obsidianmd/ui/sentence-case
             'Do not include frontmatter values that are empty in the Rentry paste.',
           )
           .addToggle((toggle) => {
@@ -213,24 +215,25 @@ class SettingTab extends PluginSettingTab {
           })
           .setDisabled(!settings.includeFrontmatter);
       })
-      .addSetting((s) =>
-        s
-          .setName('Use rentry.org')
-          .setDesc(
-            <>
-              Use <a href="https://rentry.org">rentry.org</a> for all calls to
-              Rentry. Can be useful if calls to{' '}
-              <a href="https://rentry.org">rentry.co</a> fail.
-            </>,
-          )
-          .addToggle((toggle) => {
-            toggle
-              .setValue(settings.useRentryDotOrg)
-              .onChange(async (value) => {
-                settings.useRentryDotOrg = value;
-                await plugin.saveSettings();
-              });
-          }),
+      .addSetting(
+        (s) =>
+          void s
+            .setName('Use rentry.org')
+            .setDesc(
+              <>
+                Use <a href="https://rentry.org">rentry.org</a> for all calls to
+                Rentry. Can be useful if calls to{' '}
+                <a href="https://rentry.org">rentry.co</a> fail.
+              </>,
+            )
+            .addToggle((toggle) => {
+              toggle
+                .setValue(settings.useRentryDotOrg)
+                .onChange(async (value) => {
+                  settings.useRentryDotOrg = value;
+                  await plugin.saveSettings();
+                });
+            }),
       );
 
     const cloudinarySettings: Setting[] = [];
@@ -268,16 +271,17 @@ class SettingTab extends PluginSettingTab {
           </sup>
         </>,
       )
-      .addSetting((s) =>
-        s.setName('Enable embed uploads').addToggle((toggle) => {
-          toggle.setValue(settings.replaceEmbeds).onChange(async (value) => {
-            settings.replaceEmbeds = value;
-            cloudinarySettings.forEach((setting) =>
-              setting.setDisabled(!value),
-            );
-            await plugin.saveSettings();
-          });
-        }),
+      .addSetting(
+        (s) =>
+          void s.setName('Enable embed uploads').addToggle((toggle) => {
+            toggle.setValue(settings.replaceEmbeds).onChange(async (value) => {
+              settings.replaceEmbeds = value;
+              cloudinarySettings.forEach(
+                (setting) => void setting.setDisabled(!value),
+              );
+              await plugin.saveSettings();
+            });
+          }),
       )
       .addSetting(
         setupCloudinarySetting('Cloudinary cloud name', 'cloudinaryCloudName'),

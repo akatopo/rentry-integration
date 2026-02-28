@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { h, Fragment } from './h.js';
 
 export function Content({ filename }: { filename: string }) {
