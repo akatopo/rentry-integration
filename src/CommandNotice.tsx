@@ -1,5 +1,7 @@
 import { h, Fragment } from './h.js';
 
+import { rentryBrandName } from './rentry.js';
+
 import type { Ref } from './h.js';
 
 export function CommandNotice({
@@ -18,7 +20,7 @@ export function CommandNotice({
 
   return (
     <div class={className}>
-      <div class="notice-message-title">Rentry Integration</div>
+      <div class="notice-message-title">{rentryBrandName} Integration</div>
       <div class="notice-message-description">{message}</div>
       {rentryUrl ? (
         <>

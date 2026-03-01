@@ -93,7 +93,6 @@ export function tryParseEmbedCache(s: unknown) {
     return undefined;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const jsonParsed = tryJsonParse(s);
   if (jsonParsed === undefined || !isRecord(jsonParsed)) {
     return undefined;

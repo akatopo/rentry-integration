@@ -21,6 +21,7 @@ import {
   type ConfirmationModalRes,
 } from './ConfirmationModal.js';
 import { isMd } from './util.js';
+import { rentryBrandName } from './rentry.js';
 
 import type { ButtonsRenderFunc } from './ConfirmationModal.js';
 
@@ -74,7 +75,7 @@ export default class RentryIntegrationPlugin extends Plugin {
         if (Object.hasOwn(MenuItem.prototype, 'setSubmenu')) {
           menu.addItem((subItem) => {
             const submenu = subItem as MenuItem & { setSubmenu: () => Menu };
-            submenu.setTitle('Rentry integration');
+            submenu.setTitle(`${rentryBrandName} integration`);
             const sub = submenu.setSubmenu();
             renderMenuItems(sub, file);
           });
@@ -163,7 +164,7 @@ class SettingTab extends PluginSettingTab {
 
     const desc = (
       <>
-        Include frontmatter as a markdown table in Rentry pastes.
+        Include frontmatter as a markdown table in {rentryBrandName} pastes.
         <br />
         Will <em>not</em> include{' '}
         {rest.reverse().map((r) => (
@@ -202,8 +203,7 @@ class SettingTab extends PluginSettingTab {
         skipEmptyFrontmatterSetting = s;
         s.setName('Skip empty frontmatter values')
           .setDesc(
-            // eslint-disable-next-line obsidianmd/ui/sentence-case
-            'Do not include frontmatter values that are empty in the Rentry paste.',
+            `Do not include frontmatter values that are empty in the ${rentryBrandName} paste.`,
           )
           .addToggle((toggle) => {
             toggle
@@ -222,7 +222,7 @@ class SettingTab extends PluginSettingTab {
             .setDesc(
               <>
                 Use <a href="https://rentry.org">rentry.org</a> for all calls to
-                Rentry. Can be useful if calls to{' '}
+                {rentryBrandName}. Can be useful if calls to{' '}
                 <a href="https://rentry.org">rentry.co</a> fail.
               </>,
             )

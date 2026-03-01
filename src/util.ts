@@ -18,8 +18,7 @@ export function tryGetFrontmatterCopy(
   let frontmatterCopy = {};
   return tryProcessFrontmatter(
     (fm) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const deepCopy = JSON.parse(JSON.stringify(fm));
+      const deepCopy = JSON.parse(JSON.stringify(fm)) as unknown;
       if (isRecord(deepCopy)) {
         frontmatterCopy = deepCopy;
       }
@@ -53,8 +52,7 @@ export async function getNoteTextWithoutFrontmatter(file: TFile, app: App) {
 
 export function tryJsonParse(s: string) {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return JSON.parse(s);
+    return JSON.parse(s) as unknown;
   } catch (error) {
     return undefined;
   }

@@ -73,8 +73,8 @@ export function tryRenderFrontmatterText(frontmatter: unknown) {
         .map((s) => escapeMd(x.length > 1 ? `- ${s}` : String(s)))
         .join(' \\n ');
     }
-    // we don't expect x to be an object
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string -- we don't expect x to be an object
     return String(x);
   };
   const frontmatterEntries = [...Object.entries(frontmatter)].map(

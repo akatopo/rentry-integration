@@ -1,8 +1,10 @@
 // see https://github.com/microsoft/TypeScript/issues/45167 for Error.cause
 
 import { requestUrl } from 'obsidian';
-// eslint-disable-next-line no-restricted-imports
+
+// eslint-disable-next-line no-restricted-imports -- this is a desktop plugin at the moment so using a fetch wrapper is OK
 import ky from 'ky';
+
 import { source } from 'common-tags';
 import { parse as parseCookie } from 'cookie';
 import { utf8CharacterCount } from './utf8CharacterCount.js';
@@ -28,6 +30,8 @@ const defaultMetadata = source`
   OPTION_DISABLE_SEARCH_ENGINE=true
   OPTION_DISABLE_VIEWS=true
 `;
+
+export const rentryBrandName = 'Rentry';
 
 const getBaseUrl = (useDotOrg?: boolean) =>
   useDotOrg ? 'https://rentry.org' : 'https://rentry.co';
