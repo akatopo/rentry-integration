@@ -22,7 +22,7 @@
 		"builtin-modules": "3.3.0",
 		"esbuild": "^0.27.0",
 		"eslint": "^9.39.3",
-		"eslint-plugin-obsidianmd": "^0.1.9",
+		"eslint-plugin-obsidianmd": "^0.4.2",
 		"globals": "^17.3.0",
 		"obsidian": "latest",
 		"tslib": "2.4.0",
@@ -33,7 +33,6 @@
 		"common-tags": "^1.8.2",
 		"cookie": "^0.6.0",
 		"es-arraybuffer-base64": "^1.1.2",
-		"ky": "^1.14.0",
 		"release-it": "^19.0.6",
 		"turndown": "^7.2.2",
 		"zod": "^4.3.5"

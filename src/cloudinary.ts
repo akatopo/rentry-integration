@@ -1,10 +1,5 @@
 // see https://github.com/microsoft/TypeScript/issues/45167 for Error.cause
 
-import { requestUrl } from 'obsidian';
-
-// eslint-disable-next-line no-restricted-imports -- this is a desktop plugin at the moment so using a fetch wrapper is OK
-import ky from 'ky';
-
 // @ts-expect-error
 import toHex from 'es-arraybuffer-base64/Uint8Array.prototype.toHex';
 import {
@@ -16,7 +11,7 @@ import {
   // type infer as Infer,
 } from 'zod';
 
-import { abortablePromise } from './util.js';
+import { encodeFormData, request } from './util.js';
 
 const baseUrl = `https://api.cloudinary.com/v1_1`;
 
@@ -128,7 +123,6 @@ export async function deleteByAssetId({
     },
     signal,
     commandVerb,
-    bypassCors: true,
   });
 
   try {
@@ -147,7 +141,6 @@ async function executeRequest({
   commandVerb,
   method = 'post',
   basicAuthCredentials,
-  bypassCors = false,
 }: {
   // payload: Record<string, string>;
   body: FormData | string;
@@ -156,45 +149,31 @@ async function executeRequest({
   commandVerb?: string;
   method?: 'post' | 'delete';
   basicAuthCredentials?: { apiKey: string; apiSecret: string };
-  bypassCors?: boolean;
 }) {
-  const headers = {
-    ...(typeof body === 'string'
-      ? {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        }
-      : {}),
-    ...(basicAuthCredentials
-      ? {
-          Authorization: `Basic ${btoa(
-            `${basicAuthCredentials.apiKey}:${basicAuthCredentials.apiSecret}`,
-          )}`,
-        }
-      : {}),
-  };
-
   try {
-    const res = (
-      bypassCors
-        ? (
-            await abortablePromise(
-              requestUrl({
-                headers,
-                method,
-                body: body as string, // no need to bother with FormData
-                url: `${baseUrl}/${endpoint}`,
-              }),
-              { signal },
-            )
-          ).json
-        : await ky[method](`${baseUrl}/${endpoint}`, {
-            headers,
-            body,
-            signal,
-          }).json()
-    ) as unknown;
+    const { body: encodedBody, contentType } =
+      typeof body === 'string'
+        ? { body, contentType: 'application/x-www-form-urlencoded' }
+        : await encodeFormData(body);
 
-    return res;
+    const headers = {
+      'Content-Type': contentType,
+      ...(basicAuthCredentials
+        ? {
+            Authorization: `Basic ${btoa(
+              `${basicAuthCredentials.apiKey}:${basicAuthCredentials.apiSecret}`,
+            )}`,
+          }
+        : {}),
+    };
+
+    return await request({
+      url: `${baseUrl}/${endpoint}`,
+      method: method.toUpperCase(),
+      headers,
+      body: encodedBody,
+      signal,
+    });
   } catch (cause) {
     throw new Error(
       `Failed to ${

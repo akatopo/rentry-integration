@@ -2,13 +2,10 @@
 
 import { requestUrl } from 'obsidian';
 
-// eslint-disable-next-line no-restricted-imports -- this is a desktop plugin at the moment so using a fetch wrapper is OK
-import ky from 'ky';
-
 import { source } from 'common-tags';
 import { parse as parseCookie } from 'cookie';
 import { utf8CharacterCount } from './utf8CharacterCount.js';
-import { abortablePromise } from './util.js';
+import { abortablePromise, request } from './util.js';
 
 type CreateRes = {
   status: string;
@@ -178,10 +175,6 @@ async function executeRequest<T extends Record<string, unknown>>({
   commandVerb?: string;
   baseUrl?: string;
 }) {
-  const headers = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-  };
-
   try {
     const csrfmiddlewaretoken = await fetchCsrfMiddlewareToken({
       signal,
@@ -190,13 +183,15 @@ async function executeRequest<T extends Record<string, unknown>>({
     const body = String(
       new URLSearchParams({ csrfmiddlewaretoken, ...payload }),
     );
-    const res = await ky
-      .post<T | ErrorRes>(`${baseUrl}/${endpoint}`, {
-        headers,
-        body,
-        signal,
-      })
-      .json();
+    const res = (await request({
+      url: `${baseUrl}/${endpoint}`,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Referer: baseUrl,
+      },
+      body,
+      signal,
+    })) as T | ErrorRes;
     if (Object.hasOwn(res, 'errors') || res.content !== 'OK') {
       throw new Error((res as ErrorRes).content);
     }

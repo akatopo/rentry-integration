@@ -1,5 +1,5 @@
 import type { TAbstractFile, App } from 'obsidian';
-import { TFile } from 'obsidian';
+import { TFile, requestUrl } from 'obsidian';
 
 export function isRecord(o: unknown): o is Record<string, unknown> {
   return (
@@ -79,6 +79,39 @@ export function abortablePromise<T>(
       reject(new Error('Abortable had an exception', { cause: reason })),
     );
   });
+}
+
+export async function request({
+  url,
+  method = 'POST',
+  headers,
+  body,
+  signal,
+}: {
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string | ArrayBuffer;
+  signal?: AbortSignal;
+}) {
+  const res = await abortablePromise(
+    requestUrl({ url, method, headers, body, throw: false }),
+    { signal },
+  );
+
+  if (res.status >= 400) {
+    throw new Error(`HTTP ${res.status}: ${res.text}`);
+  }
+
+  return res.json as unknown;
+}
+
+// requestUrl only accepts string | ArrayBuffer, so let the browser encode multipart
+export async function encodeFormData(formData: FormData) {
+  const res = new Response(formData);
+  const body = await res.arrayBuffer();
+  const contentType = res.headers.get('content-type') ?? 'multipart/form-data';
+  return { body, contentType };
 }
 
 export function getGraphemeCount(s: string) {
