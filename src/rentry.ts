@@ -3,7 +3,7 @@
 import { requestUrl } from 'obsidian';
 
 import { source } from 'common-tags';
-import { parse as parseCookie } from 'cookie';
+import { parseSetCookie } from 'cookie';
 import { utf8CharacterCount } from './utf8CharacterCount.js';
 import { abortablePromise, request } from './util.js';
 
@@ -150,8 +150,8 @@ async function fetchCsrfMiddlewareToken({
     const res = await abortablePromise(requestUrl(baseUrl), { signal });
 
     const setCookie = res.headers['set-cookie'][0];
-    const cookies = parseCookie(setCookie);
-    const { csrftoken: csrfToken } = cookies;
+    const cookie = parseSetCookie(setCookie);
+    const csrfToken = cookie.name === 'csrftoken' ? cookie.value : undefined;
     if (!csrfToken) {
       throw new Error('Could not set CSRF token');
     }
