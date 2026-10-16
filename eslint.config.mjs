@@ -9,7 +9,6 @@ import globals from 'globals';
 export default defineConfig(
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
-  // @ts-expect-error
   ...obsidianmd.configs.recommended,
   {
     languageOptions: {
