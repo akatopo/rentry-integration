@@ -7,7 +7,7 @@
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-    "lint": "eslint .",
+		"lint": "eslint .",
 		"release": "release-it"
 	},
 	"keywords": [],
@@ -23,8 +23,9 @@
 		"eslint": "^9.39.3",
 		"eslint-plugin-obsidianmd": "^0.4.2",
 		"globals": "^17.6.0",
-    "jiti": "^2.6.1",
+		"jiti": "^2.6.1",
 		"obsidian": "latest",
+		"release-it": "^21.1.1",
 		"tslib": "2.4.0",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.56.1"
@@ -33,7 +34,6 @@
 		"common-tags": "^1.8.2",
 		"cookie": "^2.0.1",
 		"es-arraybuffer-base64": "^1.1.2",
-		"release-it": "^19.0.6",
 		"turndown": "^7.2.2",
 		"zod": "^4.3.5"
 	}
