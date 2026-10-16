@@ -169,7 +169,7 @@ async function executeRequest({
 
     return await request({
       url: `${baseUrl}/${endpoint}`,
-      method: method.toUpperCase(),
+      method,
       headers,
       body: encodedBody,
       signal,
